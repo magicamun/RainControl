@@ -65,10 +65,20 @@ Füllstand:
   ACHTUNG: Die Kalibrierung muss ohne angeschlossenen Arduino erfolgen um Beschädigungen durch Überspannung am Eingang des Arduino zu vermeiden.
   -> Siehe Kalibrierung und Inbetriebnahme.
   
-  In Abhängigkeit von der gemessenen Füllhöhe und zwei einzustellenden Werten (LimitLow, LimitHigh) schaltet der Arduino das Relais sowie eine LED über PIN D14 an oder aus. Damit bei unterem Schwellwert / Minimum nicht sofort bei erneutem überschreiten (Nachlauf Regen) wieder zurück geschaltet wird, gibt es einen weiteren Wert (Oberer Schwellwert) der erreicht werden muss, damkt zurück auf Zisterne geschaltet wird.
+  In Abhängigkeit von der gemessenen Füllhöhe und zwei einzustellenden Werten (LimitLow, LimitHigh) schaltet der Arduino das Relais sowie eine LED über PIN D14 an oder aus.
+  Damit bei unterem Schwellwert / Minimum nicht sofort bei erneutem überschreiten (Nachlauf Regen) wieder zurück geschaltet wird, gibt es einen weiteren Wert (Oberer Schwellwert),
+  der erreicht werden muss, damkt zurück auf Zisterne geschaltet wird.
 
 Strom, Pumpe an oder aus:
-  Über den Stromsensor SCT013 kann der Zustand der Pumpe (Regenwassernutzung) abgefragt werden, ohne in die Anlage eingreifen zu müssen. Dazu wird der Stromsensor unter der Beachtung der Stromflussrichtung um die Phase (nur die Phase) zur Pumpe gelegt. Am Ausgang des Sensors wird über Induktion eine Wechselspannung abgegeben. Dabei sind die Werte des Sensors zur korrekten Berechnung des Stroms und der Leistung in der Software einzustellen. Wichtig ist eine korrekte Dimensionierung des Sensors - es gibt unterschiedliche Typen. Für eine möglichst feine Auflösung ist der Messbereich (Ampere) des Sensors möglichst klein zu wählen - aber groß genug, dass bei Vollast der Pumpe der Wert der Leistung ausreicht. Der hier benutzte Sensor misst bis 5A -> 1,1kw. Meine Pumpe hat 800 Watt Leistungsaufnahme. Gleichzeitig soll der Sensor möglichst große Spannungswerte am Ausgang produzieren, damit die Auflösung des Wertes möglichst fein/genau ist. Es gibt die Sensoren mit 0,33V und 1V Ausgangsspannung -> ich nutze hier 1V. Da die Spannung eine Wechselspannung ist, wird über den Spannungsteiler am Sensor die Wechselspannung um +1,65V angehoben. Der analoge Wert an A1 wird in einen Wert für den Stromverbrauch umgerechnt. Dazu ist es wichtig, den Messbereich des Sensors, die Ausgangsspannung des Sensors und den Referenzwert am Arduino (Zero 3,3V) zu kennen und in der Software einzustellen.
+  Über den Stromsensor SCT013 kann der Zustand der Pumpe (Regenwassernutzung) abgefragt werden, ohne in die Anlage eingreifen zu müssen.
+  Dazu wird der Stromsensor unter der Beachtung der Stromflussrichtung um die Phase (nur die Phase) zur Pumpe gelegt.
+  Am Ausgang des Sensors wird über Induktion eine Wechselspannung abgegeben. Dabei sind die Werte des Sensors zur korrekten Berechnung des Stroms und der Leistung in der Software einzustellen.
+   Wichtig ist eine korrekte Dimensionierung des Sensors - es gibt unterschiedliche Typen. Für eine möglichst feine Auflösung ist der Messbereich (Ampere) des Sensors möglichst klein zu wählen, 
+   aber groß genug, dass bei Vollast der Pumpe der Wert der Leistung ausreicht. Der hier benutzte Sensor misst bis 5A -> 1,1kw. Meine Pumpe hat 800 Watt Leistungsaufnahme.
+   Gleichzeitig soll der Sensor möglichst große Spannungswerte am Ausgang produzieren, damit die Auflösung des Wertes möglichst fein/genau ist.
+   Es gibt die Sensoren mit 0,33V und 1V Ausgangsspannung -> ich nutze hier 1V. Da die Spannung eine Wechselspannung ist, wird über den Spannungsteiler am Sensor die Wechselspannung um +1,65V angehoben.
+   Der analoge Wert an A1 wird in einen Wert für den Stromverbrauch umgerechnt. Dazu ist es wichtig, den Messbereich des Sensors, die Ausgangsspannung des Sensors und den Referenzwert am Arduino (Zero 3,3V)
+   zu kennen und in der Software einzustellen.
 
 Am Pin D13 ist ein Taster von der Displayplatine angeschlossen, mit dem der Betriebsmodus der Steuerung manuell gesetzt werden kann:
   - Auto - Der Arduino übernimmt die Ventilsteuerung (Relais und Ansteuerung Schwimmerschalter der Pumpe) in abhängigkeit des Füllstandes
@@ -85,7 +95,9 @@ Das Display zeigt Datum, Uhrzeit, Füllstand und Betriebsmodus an
 Mit dem an RST angeschlossenen Taster lässt sich der Controller resetten.
 
 Ventilsteuerung generell:
-Der Controller misst den Füllstand und (kann) in Abhängigkeit davon einen Schwimmerschalter für handelsübliche Zisternenpumpen ersetzen. Dazu ist die Steuerung der Pumpe auf "Automatik" zu stellen und statt des Schwimmerschalters ein 230V - Kabel vom Anschluss des Schwimmerschalters zum Controller (3 - polige Klemme) zu führen. Welche Klemmen am 3ploigen Schraubklemmenblock zu belegen sind, hängt von der Anlage, bzw. der (bisherigen) Verdrahtung des Schwimmerschalters ab. Probieren! Auf keinen Fall parallel zum Schwimmerschalter zu betreiben -> entweder, oder.
+Der Controller misst den Füllstand und (kann) in Abhängigkeit davon einen Schwimmerschalter für handelsübliche Zisternenpumpen ersetzen. Dazu ist die Steuerung der Pumpe auf "Automatik" zu stellen
+und statt des Schwimmerschalters ein 230V - Kabel vom Anschluss des Schwimmerschalters zum Controller (3 - polige Klemme) zu führen.
+Am Schraubklemmenblock 3 polig ist in jedem der mittlere Anschluss zu belegen und dann entweder NO (Normally open) oder NC (normally connected) - auf keinen Fall NO UND NC -> das führt zum Kurzschluss.
 
 Funktionsweise Software:
 
