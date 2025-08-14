@@ -1,5 +1,3 @@
-// #include <FlashAsEEPROM.h>
-
 #include <Arduino.h>
 #include <avr/dtostrf.h>
 #include <PubSubClient.h>
