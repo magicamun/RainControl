@@ -36,8 +36,8 @@ Hardware:
   (https://www.az-delivery.de/products/oled-2-4-white?variant=44762703986955&utm_source=google&utm_medium=cpc&utm_campaign=16964979024&utm_content=166733588295&utm_term=&gad_source=1&gbraid=0AAAAADBFYGXj7s2C_h3TASz0DupxomgUw&gclid=EAIaIQobChMI-YCAy9LmjAMVH5CDBx0H8zKnEAQYAyABEgLpafD_BwE)
   
   Schraubklemmblöcke zum Anschluss von 
-  - 3 x [2 polig] (https://www.conrad.de/de/p/deca-1216197-schraubklemmblock-1-50-mm-polzahl-3-blau-1-st-1216197.html) (Sonde Zisterne, Spannungsversorgung 24V, Stromsensor SCT 013)
-  - 1 x [3-polig] (https://www.conrad.de/de/p/deca-1282826-schraubklemmblock-1-50-mm-polzahl-2-blau-1-st-1282826.html) (Umschaltung Regenwasserpumpe, Übersteuerung Schwimmerschaltung - ACHTUNG - 230V)
+  - 3 x [2 polig](https://www.conrad.de/de/p/deca-1216197-schraubklemmblock-1-50-mm-polzahl-3-blau-1-st-1216197.html) (Sonde Zisterne, Spannungsversorgung 24V, Stromsensor SCT 013)
+  - 1 x [3-polig](https://www.conrad.de/de/p/deca-1282826-schraubklemmblock-1-50-mm-polzahl-2-blau-1-st-1282826.html) (Umschaltung Regenwasserpumpe, Übersteuerung Schwimmerschaltung - ACHTUNG - 230V)
   
   Zur Verbindung von Controllerplatine mit der Displayplatine:
   
