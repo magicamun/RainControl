@@ -2,11 +2,17 @@
 
 #include <Arduino.h>
 #include <avr/dtostrf.h>
+#include <PubSubClient.h>
+#include <Time.h>
 
-/* -------------------------------------------- General Definitions ---------------------------------------- */
-#define VERSION "RainControl V0.1a"
+/* ---------------------------- allgemeine Settings ----------------------------- */
+#define VERSION "RainControl V0.9a"
+
+// For Debugging with no Ethernet and no Display connecte, comment out for real-world
+#define DEBUG 1
+
 // ##############################################################################################################################
-// ---- HIER die Anpassungen vornehmen ----
+// ---- HIER die Initialen Einstellungen vornehmen, die Werte sind über MQTT anpassbar
 // ##############################################################################################################################
 // Hier die maximale Füllmenge des Behälters angeben. Dies gilt nur für symmetrische Behälter.
 // Deckelung bei 100%
@@ -28,14 +34,6 @@
 // Bei Kalibrierung mit Wasser bitte "1.0" eintragen
 const float dichte = 1.0;
 
-int percent = 0;
-int liter;
-int sonde = 0;                  // Durchschnittswert
-int pointer = 0;                // Pointer für Messung
-
-boolean state = false;
-
-/* -------------------------------------------- Modus -------------------------------------- */
 #define MODE_PIN 13
 #define MODE_ZISTERNE 0
 #define MODE_HAUSWASSER 1
@@ -51,22 +49,22 @@ int old_mode = MODE_AUTO;
 int pin_stat;
 int old_stat;
 
-/* -------------------------------------------- Ventil -------------------------------------- */
 #define VALVE_PIN 14
 #define VALVE_ZISTERNE LOW
 #define VALVE_HAUSWASSER HIGH
-int valve = VALVE_ZISTERNE;
 int new_valve = VALVE_ZISTERNE;
-int reason = 0;
 char *valves[] = {"Zisterne", "Hauswasser"};
-char *ventil = valves[valve];
 char *reasons[] = {"Manuell", "Zisterne voll", "Zisterne leer"};
 
-// Interval-Settings
-unsigned long pubMillis;
-unsigned long startMillis;  // some global variables available anywhere in the program
+// Status HyaRain (Currently unused)
+#define ERROR_PIN 1
+char *hyaraintext[] = {"Off", "On", "Failure", "Invalid"};
+
+// No more delay
+unsigned long pubMillis;        // MQTT - Refresh
 unsigned long updateMillis;     
 #define SEKUNDE 1000  // one second
+#define HSEKUNDE 500  // half second
 
 unsigned long pinMillis;
 unsigned long lastMillis = 0;
@@ -74,121 +72,179 @@ boolean publish = false;
 
 char uptime[20];
 char *up = &uptime[0];
-char timestamp[80];
-char *datzeit = &timestamp[0];
-char booted[80];
-char *boot = &booted[0];
-time_t boot_t = 0;
-time_t timestamp_t = 0;
 
 char buf[255];
+/* ---------------------------- Topics ----------------------------------- */
+// Ersatz für std::is_same (Arduino-kompatibel)
+template<typename A, typename B>
+struct is_same_type { static const bool value = false; };
 
-double current;
-double power;
+template<typename A>
+struct is_same_type<A, A> { static const bool value = true; };
 
-/*
-SD - Card - Definitions */
-#include <SD.h>
-const int chipSelect = SDCARD_SS_PIN;
+class TopicBase {
+    protected:
+        bool changed;
+    public:
+        virtual void Publish(PubSubClient *_mqttclient) = 0;
+        virtual char *Name() = 0;
+        virtual char *toString() = 0;
+        virtual ~TopicBase() {};
+        void Changed() {changed = true;};
+};
 
-boolean SDStatus = true;
-File SDSettings;
-#define SETTINGSFILE "RC.ini"
-File SDLogger;
-#define LOGFILE "RC.csv"
+template <typename Type>
+class Topic : public TopicBase {
+    private:
+        Type data;
+        char topic[128];
+        char tostring[255];
 
-struct SDData {
-    char *id;
-    int analogMin;
-    int analogMax;
-    int literMax;
-    int limitLow;
-    int limitHigh;
-    double curFactor;
-} sddata = {"RC", ANALOG_MIN, ANALOG_MAX, MAX_LITER, LIMIT_LOW, LIMIT_HIGH, 15.0};
-char *sdini_format = "%2s;%d;%d;%d;%d;%d;%s";
+    public:
+        Topic(const char *_name, Type value) : data(value) {
+            strcpy(&topic[0], _name);
+        }
 
-/*
-Ethernet
-*/
-#include <Ethernet.h>
-#include <EthernetUdp.h>
-// MAC-Addresse bitte anpassen! Sollte auf dem Netzwerkmodul stehen. Ansonsten eine generieren.
-byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0x0C };
+        char *Name() {
+            return (char *)&topic[0];
+        }
 
-// IP Adresse, falls kein DHCP vorhanden ist. Diese Adresse wird nur verwendet, wenn der DHCP-Server nicht erreichbar ist.
-IPAddress ip(192, 168,   3,  95);
-IPAddress ns(192, 168,   3, 254);
-IPAddress gw(192, 168,   3, 254);
-IPAddress sn(255, 255, 255,   0);
+        char *toString() {
+            tostring[0] = 0;
 
-EthernetClient ethClient;
-EthernetUDP Udp;
+            if (is_same_type<Type, int>::value) {
+                snprintf(tostring, sizeof(tostring), "%d", data);
+            } else if (is_same_type<Type, float>::value || is_same_type<Type, double>::value) {
+                snprintf(tostring, sizeof(tostring), "%.3f", data);
+            } else if (is_same_type<Type, const char*>::value || is_same_type<Type, char*>::value) {
+                snprintf(tostring, sizeof(tostring), "%s", data);
+            } else if (is_same_type<Type, const bool>::value || is_same_type<Type, bool>::value) {
+                snprintf(tostring, sizeof(tostring), "%s", data ? "true" : "false");
+            } else if (is_same_type<Type, const time_t>::value || is_same_type<Type, time_t>::value) {
+                struct tm *timeinfo;
+                time ((time_t *)&data);
+                timeinfo = localtime((time_t *)&data);
+                
+                strftime(tostring, sizeof(tostring), "%d.%m.%Y %H:%M:%S", timeinfo);
+                // snprintf(tostring, sizeof(tostring), "%s", "2.1.2025");
+            } else {
+                snprintf(tostring, sizeof(tostring), "[unsupported type]");
+            }
+            return tostring;
+        }
+        // Zuweisungsoperator überladen
+        Topic<Type>& operator=(const Type& value) {
+            setData(value);
+            return *this;
+        }
 
-/* ------------------------------------------- NTP and Time ----------------------------------------- */
-#include <NTP.h>
-#define NTPSERVER "pool.ntp.org"
-#define SECONDS_PER_MINUTE 60
-#define SECONDS_PER_HOUR (60 * SECONDS_PER_MINUTE)
-#define SECONDS_PER_DAY (24 * SECONDS_PER_HOUR)
-bool ntp_time = false;
-NTP ntp(Udp);
+        // Typ-Konvertierungsoperator (Lesen)
+        operator Type() const {
+            return getData();
+        }
 
+        Type getData() const {
+            return data;
+        };
 
-/* ------------------------------------------ Display ----------------------------------------------- */
-#include <U8g2lib.h>
+        void setData(Type value) {
+            if (value != data) {
+                data = value;
+                changed = true;
+            }
+        };
 
-#ifdef U8X8_HAVE_HW_SPI
-#include <SPI.h>
+        void Publish(PubSubClient *_mqttclient) {
+            if (changed) {
+                if (_mqttclient->connected()) {
+                    changed = false;
+                    _mqttclient->publish(topic, toString());
+                }
+#ifdef DEBUG
+                changed = false;
 #endif
-#ifdef U8X8_HAVE_HW_I2C
-#include <Wire.h>
-#endif
+                Serial.print(topic);
+                Serial.print(" ");
+                Serial.println(toString());
+            }
+        };
+};
 
-U8G2_SSD1309_128X64_NONAME2_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 2, /* dc=*/ 3, /* reset=*/ 4);
+
+Topic<time_t>   Timestamp("Timestamp", 0);
+Topic<int>      Mode("Mode", 0);
+Topic<int>      Valve("Valve", VALVE_ZISTERNE);
+Topic<int>      Analog("Analog", 0);
+Topic<int>      Liter("Liter", 0);
+Topic<int>      LimitLow("LimitLow", 0);
+Topic<int>      LimitHigh("LimitHigh", 0);
+Topic<int>      LiterMax("LiterMax",0);
+Topic<float>    Prozent("Prozent", 0.0);
+Topic<char *>   Uptime("Uptime", "");
+Topic<bool>     StatusSonde("StatusSonde", true);
+Topic<char *>   Ventil("Ventil", valves[VALVE_ZISTERNE]);
+Topic<char *>   Modus("Modus", "");
+Topic<char *>   HyaRain("HyaRain", "");
+Topic<time_t>   Booted("Booted", 0);
+Topic<int>      AnalogMin("AnalogMin", 0);
+Topic<int>      AnalogMax("AnalogMax", 0);
+Topic<double>   CurrentFactor("CurrentFactor", 1.0);
+Topic<double>   Current("Current", 0.0);
+Topic<double>   Power("Power", 0.0);
+Topic<double>   KWh("KWh", 0.0);
+Topic<int>      Reason("Reason", 0);
+Topic<char *>   ReasonText("ReasonText", reasons[0]);
+
+TopicBase* topics[] = { &Timestamp, &Mode, &Valve, &Analog, &Liter, &LimitLow, &LimitHigh, &LiterMax, &Prozent, &Valve, 
+                        &Uptime, &StatusSonde, &Ventil, &Modus, &HyaRain, &Booted, &AnalogMin, &AnalogMax, &CurrentFactor,
+                        &Current, &Power, &KWh, &Reason, &ReasonText};
 
 
-/* ------------------------------------------- Analog Input ----------------------------------------- */
-
-int sondePin = A0;
-int sctPin = A1;
-
-/*
-Class for handling analog Input
-*/
+/* ------------------------------ Analog Input ---------------------- */
 class AI {
     protected:
-        int pin;          // Analog Pin
-        int count;        // Number of Values added
-        long aggregate;   // All Values summed up
-        long offset;      // For Values oszillating an offset (e.g. AC-Current)
+        int pin;
+        int count;
+        long aggregate;
+        long offset;
     public:
-        AI(int _pin) {
-            pin = _pin;
-            count = 0;
-            aggregate = 0;
-            offset = 0;
+        AI(int _pin, int _offset = 0) {
+            pin = _pin; count = 0; aggregate = 0; offset = offset;
         };
-        int Count() { return count;};
-        void Read() {                                               // Aggregate the Values
+        int Count() {
+            return count;
+        };
+        void Read(int _offset = 0) {
             int val = analogRead(pin);
-            aggregate += val;
-            count++;
-        }; 
-        void ReadAC(int _avg = 512) {                               // Aggregate the Value as abs difference to the offset - for oszillating Values (AC-Current)
-            int val = analogRead(pin);
-            aggregate += abs(val - _avg);
+            aggregate += abs(val - _offset);
             offset += val;
             count++;
         };
-        int Value() { return aggregate / count;};                   // Return the median value
-        int Offset() {return offset / count;};                      // Return a derived offset from the values
-        void Restart() { count = 0; aggregate = 0; offset = 0;};    // Restart the measuring
+        int Value() {
+            if (count > 0 && aggregate > 0) {
+                return max(aggregate / count - 1, 0);
+            } else {
+                return 0;
+            }
+        };
+        int Offset() {
+            if (count > 0) {
+                return offset / count;
+            } else {
+                return 0;
+            }
+        };
+        void Restart() {
+            aggregate = 0;
+            if (count > 0) {
+                offset = offset / count;
+            } else {
+                offset = 0;
+            }
+            count = 0;
+        };
 };
 
-/*
-Class for gathering Ampere-Equivalents for AC - Current , Energymonitor SCT013 - based
-*/
 class Energy : public AI {
     private:
         double ampmax;  // Maximale Ampere bei maximaler Amplitude -> 1, 5, 10, 30, 100 Amp
@@ -205,8 +261,11 @@ class Energy : public AI {
         
         double amp;
         double watt;
+        double wattseconds;
+        unsigned long wattmillis;
+
     public:
-        Energy(int _pin, double _ampmax, double _vmax, double _volt = 230, double _vrefmax = 3.3, double _vrefmin = 0, int _imax = 1024, int _imin = 0) : AI(_pin) {
+        Energy(int _pin, double _ampmax, double _vmax, double _volt = 230, double _vrefmax = 3.3, double _vrefmin = 0, int _imax = 1024, int _imin = 0) : AI(_pin, 512) {
             ampmax = _ampmax;
             vmax = _vmax;
             volt = _volt;
@@ -214,27 +273,106 @@ class Energy : public AI {
             vrefmin = _vrefmin;
             imax = _imax;
             imin = _imin;
-
+            wattseconds = 0;
+            wattmillis = millis();
+            watt = 0;
             scale = ampmax * (vrefmax - vrefmin) / (imax - imin) / vmax;
         };
-        double Scale() { return scale; };
-        double Amp() { amp = (double) aggregate / (double) count * scale; return amp;};
-        double Volt() { return volt; };
-        double Watt() { return Volt() * Amp(); };
+        double Scale() {
+            return scale;
+        };
+        double Amp() {
+            if (count > 0 && aggregate > 2 * count) {
+                amp = max(((double) aggregate / (double)count - 1.0), 0) * scale;
+            } else {
+                amp = 0;
+            }
+            return amp;
+        };
+        double Volt() {
+            return volt;
+        };
+        double Power() {
+            return Volt() * Amp();
+        };
+
+        void ResetKwh() {
+            wattseconds = 0;
+            wattmillis = millis();
+            watt = 0;
+        };
+
+        double Watt() {
+            return watt;
+        };
+
+        double Seconds() {
+            return wattseconds;
+        };
+
+        double KWh() {
+            return watt / 3600 / 1000;
+        };
+
+        void Restart() {
+            if (wattseconds > 0) {
+                watt += (Volt() * Amp() / wattseconds);
+            }
+            wattseconds += ((double) millis() - (double) wattmillis) / 1000;
+
+            aggregate = 0;
+            if (count > 0) {
+                offset = offset / count;
+            } else {
+                offset = 0;
+            }
+            count = 0;
+            wattmillis = millis();
+        };
 };
 
-Energy SCT013(sctPin, 5.0, 1.0, 230);
-AI Sonde(sondePin);
+AI Sonde(A0);                               // Drucksonde Zisterne an A0
+Energy sct013(A1, 5.0, 1.0, 230, 3.3);      // Energiesensor SCT013 - 5A, 1V, 230V Netzspannung, 3.3V VCC Arduino (MKR Zero) an A1
+int offset = 512;                           // Mittelpunkts-Wert selbstkalibrierend für Stromsensor SCT013
 
-/* -------------------------------------- MQTT definitions ---------------------------------------- */
+/* ----------------------------- Ethernet ---------------------------- */
+#include <Ethernet.h>
+#include <EthernetUdp.h>
+EthernetClient ethClient;
+EthernetUDP Udp;
 
-#include <PubSubClient.h>
-// MQTT global vars
-#define SEND_INTERVAL 30               // the sending interval of indications to the server, by default 10 seconds
+// MAC-Addresse bitte anpassen! Sollte auf dem Netzwerkmodul stehen. Ansonsten eine generieren.
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0x0C };
+
+// IP Adresse, falls kein DHCP vorhanden ist. Diese Adresse wird nur verwendet, wenn der DHCP-Server nicht erreichbar ist.
+IPAddress ip(192, 168,   3,  95);
+IPAddress ns(192, 168,   3, 254);
+IPAddress gw(192, 168,   3, 254);
+IPAddress sn(255, 255, 255,   0);
+
+/* ---------------------------- SD Card ---------------------------- */
+#include <SD.h>
+const int chipSelect = SDCARD_SS_PIN;
+boolean SDStatus = true;
+File SDSettings;
+#define SETTINGSFILE "RC.ini"
+File SDLogger;
+#define LOGFILE "RC.csv"
+
+struct SDData {
+    char *id;
+    int analogMin;
+    int analogMax;
+    int literMax;
+    int limitLow;
+    int limitHigh;
+    double currentFactor;
+} sddata = {"RC", ANALOG_MIN, ANALOG_MAX, MAX_LITER, LIMIT_LOW, LIMIT_HIGH, 15.0};
+char *sdini_format = "%2s;%d;%d;%d;%d;%d;%s;";
+
+/* ----------------------------- MQTT ---------------------------- */
+// MQTT definitions
 #define MQTT_ID "RainControl"
-
-boolean mqttconnected = false;
-
 void MqttCallback(char *topic, byte *payload, unsigned int length);
 
 // IP Adresse und Port des MQTT Servers
@@ -246,39 +384,7 @@ const char *mqttuser = "mqttiobroker";
 const char *mqttpass = "Waldweg3";
 PubSubClient mqttclient(ethClient);
 
-// Topics
-
-struct Topic {
-   char *topic;
-   char type;
-   unsigned long pointer;
-};
-
-typedef Topic t_Topic;
-
-t_Topic topics[] = {
-    {"Timestamp",   'C', (unsigned long) &datzeit},
-    {"Mode",        'I', (unsigned long) &mode},
-    {"Valve",       'I', (unsigned long) &valve},
-    {"Sonde",       'I', (unsigned long) &sonde},
-    {"Liter",       'I', (unsigned long) &liter},
-    {"LimitLow",    'I', (unsigned long) &sddata.limitLow},
-    {"LimitHigh",   'I', (unsigned long) &sddata.limitHigh},
-    {"LiterMax",    'I', (unsigned long) &sddata.literMax},
-    {"Prozent",     'I', (unsigned long) &percent},
-    {"Mode",        'I', (unsigned long) &mode},
-    {"Valve",       'I', (unsigned long) &valve},
-    {"Uptime",      'C', (unsigned long) &up},
-    {"Status",      'B', (unsigned long) &state},
-    {"Ventil",      'C', (unsigned long) &ventil},
-    {"Modus",       'C', (unsigned long) &modus},
-    {"Booted",      'C', (unsigned long) &boot},
-    {"AnalogMin",   'I', (unsigned long) &sddata.analogMin},
-    {"AnalogMax",   'I', (unsigned long) &sddata.analogMax}, 
-    {"Calibration", 'F', (unsigned long) &sddata.curFactor},
-    {"Current",     'F', (unsigned long) &current},
-    {"Power",       'F', (unsigned long) &power},
-};
+#define SEND_INTERVAL 30             // the sending interval of indications to the server, by default 30 seconds
 
 struct Callback {
    String callback;
@@ -297,7 +403,6 @@ t_Callback callbacks[] = {
     {String(MQTT_ID) + String("/cmd/Mode"), MqttSetMode},
     {String(MQTT_ID) + String("/cmd/Calibrate"), MqttSetCalibrate}
 };
-
 
 String mqttid = MQTT_ID;
 
@@ -330,27 +435,13 @@ void MqttPublish(void) {
     
     if (!mqttclient.connected()) {
         MqttConnect();
-    } else {
-        Serial.println("MQTT - publishing...");
-        for (int i = 0; i < (sizeof(topics) / sizeof(topics[0])); i++) {
-            sprintf(topic, "%s/%s", mqttid.c_str(), topics[i].topic);
-            if (topics[i].type == 'I') {
-                sprintf(payload, "%d", *(int *)topics[i].pointer);
-            } else if (topics[i].type == 'F') {
-                dtostrf(*(double *)topics[i].pointer, 5, 2, payload);
-                // sprintf(payload, "%5.2f", *(double *)topics[i].pointer);
-            } else if (topics[i].type == 'C') {
-                sprintf(payload, "%s", *(char **)topics[i].pointer);
-            } else if (topics[i].type == 'B') {
-                sprintf(payload, "%s", *(boolean *)topics[i].pointer ? "true" : "false");
-            }
-            mqttclient.publish(topic, payload);
-            Serial.print(topic);
-            Serial.print(" ");
-            Serial.println(payload);
-        }
+    }
+    Serial.println("MQTT - publishing...");
+    for (int i = 0; i < (sizeof(topics) / sizeof(topics[0])); i++) {
+        topics[i]->Publish(&mqttclient);
     }
 }
+
 
 void toLower(char *string) {
     for (uint8_t cnt = 0; cnt < strlen(string); cnt++) {
@@ -377,11 +468,11 @@ void  MqttSetLimit(char *payload) {
         Serial.print(" , Value: ");
         Serial.println(value);
         if (strcmp(key, "low") == 0) {
-            sddata.limitLow = max(atoi(value), 0);
+            LimitLow = sddata.limitLow = max(atoi(value), 0);
             SDWriteSettings();
             publish = true;
         } else if (strcmp(key, "high") == 0) {
-            sddata.limitHigh = min(atoi(value), sddata.literMax);
+            LimitHigh = sddata.limitHigh = min(atoi(value), sddata.literMax);
             SDWriteSettings();
             publish = true;
         }
@@ -401,15 +492,15 @@ void  MqttSetMode(char *payload) {
     eq = strchr(payload, '=');
 
     if (strcmp(payload, "0") == 0 || strcmp(payload, "zisterne") == 0) {
-        mode = MODE_ZISTERNE;
+        Mode = MODE_ZISTERNE;
     } else if (strcmp(payload, "1") == 0 || strcmp(payload, "hauswasser") == 0) {
-        mode = MODE_HAUSWASSER;
+        Mode = MODE_HAUSWASSER;
     } else if (strcmp(payload, "2") == 0 || strcmp(payload, "auto") == 0) {
-        mode = MODE_AUTO;
+        Mode = MODE_AUTO;
     }
-    modus = modes[mode];
+    Modus = modes[Mode];
     Serial.print("Cmd - Mode: ");
-    Serial.println(modus);
+    Serial.println(Modus.toString());
 }
 
 void  MqttSetCalibrate(char *payload) {
@@ -432,7 +523,7 @@ void  MqttSetCalibrate(char *payload) {
         Serial.print(" , Value: ");
         Serial.println(value);
         if (strcmp(key, "analogmin") == 0) {
-            sddata.analogMin = max(atoi(value), 0);
+            AnalogMin = sddata.analogMin = max(atoi(value), 0);
             SDWriteSettings();
             publish = true;
         } else if (strcmp(key, "analogmax") == 0) {
@@ -444,7 +535,7 @@ void  MqttSetCalibrate(char *payload) {
             SDWriteSettings();
             publish = true;
         } else if (strcmp(key, "factor") == 0) {
-            sddata.curFactor = atof(value);
+            sddata.currentFactor = atof(value);
             SDWriteSettings();
             publish = true;
         }
@@ -467,12 +558,157 @@ void MqttCallback(char *topic, byte *payload, unsigned int length) {
         }
     }
 }
-/* -------------------------------------- MQTT ---------------------------------------- */
 
-void Uptime() {
-  int days, secs, hours, mins;
+/* ------------------------------- NTP ------------------------------- */
+#include <NTP.h>
+#define NTPSERVER "pool.ntp.org"
+bool ntp_time = false;
 
-    secs = timestamp_t - boot_t;
+#define SECONDS_PER_MINUTE 60
+#define SECONDS_PER_HOUR (60 * SECONDS_PER_MINUTE)
+#define SECONDS_PER_DAY (24 * SECONDS_PER_HOUR)
+
+NTP ntp(Udp);
+
+/* ------------------------------- Display ---------------------------- */
+// Display 
+#include <U8g2lib.h>
+U8G2_SSD1309_128X64_NONAME2_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 2, /* dc=*/ 3, /* reset=*/ 4);
+
+#ifdef U8X8_HAVE_HW_SPI
+#include <SPI.h>
+#endif
+#ifdef U8X8_HAVE_HW_I2C
+#include <Wire.h>
+#endif
+
+/*-------------------------------- Functions ---------------------------- */
+bool SDLogData() {
+    char logbuf[256];
+
+    if (SDStatus) {
+        Serial.print("Logging to SD Card...");
+        if (SDLogger = SD.open(LOGFILE, FILE_WRITE)) {
+            if (SDLogger.size() == 0) {
+                for (int i = 0; i < (sizeof(topics) / sizeof(topics[0])); i++) {
+                    // SDLogger.write(topics[i].topic);
+                    SDLogger.write(topics[i]->Name());
+                    SDLogger.write(';');
+                }
+                SDLogger.write('\n');
+            }
+
+            for (int i = 0; i < (sizeof(topics) / sizeof(topics[0])); i++) {
+                SDLogger.write(topics[i]->toString());
+                /*
+                if (topics[i].type == 'I') {
+                    sprintf(logbuf, "%d", *(int *)topics[i].pointer);
+                } else if (topics[i].type == 'F') {
+                    sprintf(logbuf, "%5.2f", *(float *)topics[i].pointer);
+                } else if (topics[i].type == 'C') {
+                    sprintf(logbuf, "%s", *(char **)topics[i].pointer);
+                } else if (topics[i].type == 'B') {
+                    sprintf(logbuf, "%s", *(boolean *)topics[i].pointer ? "true" : "false");
+                }
+                SDLogger.write(logbuf);
+                */
+                SDLogger.write(';');
+            }
+            SDLogger.write('\n');
+            SDLogger.close();
+            Serial.println("ok");
+        } else {
+            Serial.println("failed");
+        }
+    }
+}
+
+bool SDReadSettings() {
+    char line[1024];
+    char sdbuf[256];
+    int i = 0;
+    char id[4];
+    int aMin, aMax, lMax, lLow, lHigh;
+    double cFactor;
+    char ccFactor[64];
+
+    if (SDStatus) {
+        Serial.print("read Settings from SD Card...");
+        if (SDSettings = SD.open(SETTINGSFILE, FILE_READ)) {
+            while (SDSettings.available() && i < 256) {
+                sdbuf[i++] = SDSettings.read();
+            }
+            SDSettings.close();
+            sdbuf[i] = 0;
+
+            sscanf(sdbuf, sdini_format, &id[0], &aMin, &aMax, &lMax, &lLow, &lHigh, &ccFactor[0]);
+            Serial.println("ok");
+            if (id[0] == 'R' && id[1] == 'C') {
+                sprintf(line, "AnalogMin: %d, AnalogMax: %d, LiterMax: %d, LimitLow: %d, LimitHigh: %d, cFactor: %s", aMin, aMax, lMax, lLow, lHigh, ccFactor[0]);
+                Serial.println(line);
+                AnalogMin       = sddata.analogMin = aMin;
+                AnalogMax       = sddata.analogMax = aMax;
+                LiterMax        = sddata.literMax = lMax;
+                LimitLow        = sddata.limitLow = lLow;
+                LimitHigh       = sddata.limitHigh = lHigh;
+                CurrentFactor   = sddata.currentFactor = atof((char *)&ccFactor[0]);
+            } else {
+                Serial.println("Wrong format of settings!");
+            }
+        } else {
+            Serial.println("failed");
+        }
+    }
+}
+
+bool SDWriteSettings() {
+    char sdbuf[256];
+    char ccFactor[64];
+
+    if (SDStatus) {
+        dtostrf(sddata.currentFactor,8,3, ccFactor);
+        sprintf((char *)&sdbuf[0], sdini_format, sddata.id, sddata.analogMin, sddata.analogMax, sddata.literMax, sddata.limitLow, sddata.limitHigh, ccFactor);
+        Serial.println((char *)&sdbuf[0]);
+        SD.remove(SETTINGSFILE);
+        Serial.print("writing Settings to SD Card...");
+        if (SDSettings = SD.open(SETTINGSFILE, FILE_WRITE)) {
+            SDSettings.seek(0);
+            SDSettings.println((char *)&sdbuf[0]);
+            SDSettings.close();
+            Serial.println("ok.");
+        } else {
+            Serial.println("failed!");
+            SDStatus = false;
+        }
+    }
+}
+
+bool SDsetup() {
+    Serial.println("Initializing SD Card...");
+    
+    if (!SD.begin(chipSelect)) {
+        Serial.println("Initialization failed. Things to check:");
+        // DisplayPrint("Initialization failed. Things to check:");
+        Serial.println(" * is a card inserted?");
+        // DisplayPrint(" * is a card inserted?");
+        Serial.println(" * is your wiring correct?");
+        // DisplayPrint(" * is your wiring correct?");
+        Serial.println(" * did you change the chipSelect pin to matcjh your shield or module?");
+        SDStatus = false;
+    } else {
+        Serial.println("Wiring is correct and a card is present.");
+        // DisplayPrint("Wiring is correct and a card is present.");
+        SDReadSettings();
+        // print the type of card
+        SDStatus = SDWriteSettings();
+    }
+}
+
+
+void CalcUptime() {
+    int days, secs, hours, mins;
+
+    secs = Timestamp - Booted;
 
     days = secs / (SECONDS_PER_DAY);
     secs = secs - (days * SECONDS_PER_DAY);
@@ -483,21 +719,21 @@ void Uptime() {
 
     sprintf(uptime, "%4dd %2dh %2dm", days, hours, mins);
     uptime[14]= 0;
+    Uptime = uptime;
     // Serial.print("Uptime: ");
     // Serial.print(uptime);
     if (setmode) {
         Serial.print(setmode ? " Settings-Mode" : "");
         sprintf(buf, " (%d)secs ", mode_count);
         Serial.println(buf);
-        // Serial.print(" ");
     }
-    // Serial.println("");
 }
 
 void CheckEthernet() {
+    Serial.println("Check Ethernet - Connection...");
     if (Ethernet.hardwareStatus() != EthernetNoHardware && Ethernet.linkStatus() == LinkON) {
         /*--------------------------------------------------------------
-           check ehternet services
+           check Ethernet services
           --------------------------------------------------------------*/
         switch (Ethernet.maintain()) {
             case 1:
@@ -533,185 +769,46 @@ void CheckEthernet() {
     }
 }
 
-/*
-void ReadSonde() {
-    float calc;
-    // read the analog value and build floating middle
-    myArray[pointer++] = analogRead(sondePin);      // read the input pin
-
-    pointer = pointer % messungen;
-
-    // Werte aufaddieren
-    sonde = 0;
-    for (int i = 0; i < messungen; i++) {
-        sonde = sonde + myArray[i];
-    }
-    // Summe durch Anzahl - geglättet
-    sonde = sonde / messungen;
-
-    percent = sonde * 100 / sddata.analogMax;
-    
-    liter = sonde * sddata.literMax / sddata.analogMax;      // calculate liter
-}
-*/
-
-bool SDLogData() {
-    char logbuf[256];
-
-    if (SDStatus) {
-        Serial.print("Logging to SD Card...");
-        if (SDLogger = SD.open(LOGFILE, FILE_WRITE)) {
-            if (SDLogger.size() == 0) {
-                for (int i = 0; i < (sizeof(topics) / sizeof(topics[0])); i++) {
-                    SDLogger.write(topics[i].topic);
-                    SDLogger.write(';');
-                }
-                SDLogger.write('\n');
-            }
-
-            for (int i = 0; i < (sizeof(topics) / sizeof(topics[0])); i++) {
-                if (topics[i].type == 'I') {
-                    sprintf(logbuf, "%d", *(int *)topics[i].pointer);
-                } else if (topics[i].type == 'F') {
-                    sprintf(logbuf, "%5.2f", *(float *)topics[i].pointer);
-                } else if (topics[i].type == 'C') {
-                    sprintf(logbuf, "%s", *(char **)topics[i].pointer);
-                } else if (topics[i].type == 'B') {
-                    sprintf(logbuf, "%s", *(boolean *)topics[i].pointer ? "true" : "false");
-                }
-                SDLogger.write(logbuf);
-                SDLogger.write(';');
-            }
-            SDLogger.write('\n');
-            SDLogger.close();
-            Serial.println("ok");
-        } else {
-            Serial.println("failed");
-        }
-    }
-}
-
-bool SDReadSettings() {
-    char line[1024];
-    char sdbuf[256];
-    int i = 0;
-    char id[4];
-    int aMin, aMax, lMax, lLow, lHigh;
-    char cFactor[64];
-
-    if (SDStatus) {
-        Serial.print("read Settings from SD Card...");
-        if (SDSettings = SD.open(SETTINGSFILE, FILE_READ)) {
-            while (SDSettings.available() && i < 256) {
-                sdbuf[i++] = SDSettings.read();
-            }
-            SDSettings.close();
-
-            sscanf(sdbuf, sdini_format, &id[0], &aMin, &aMax, &lMax, &lLow, &lHigh, &cFactor[0]);
-            Serial.println("ok");
-            if (id[0] == 'R' && id[1] == 'C') {
-                sprintf(line, "AnalogMin: %d, AnalogMax: %d, LiterMax: %d, LimitLow: %d, LimitHigh: %d, cFactor: %5.2f", aMin, aMax, lMax, lLow, lHigh, cFactor);
-                Serial.println(line);
-                sddata.analogMin = aMin;
-                sddata.analogMax = aMax;
-                sddata.literMax = lMax;
-                sddata.limitLow = lLow;
-                sddata.limitHigh = lHigh;
-                sddata.curFactor = atof(cFactor);
-            } else {
-                Serial.println("Wrong format of settings!");
-            }
-        } else {
-            Serial.println("failed");
-        }
-    }
-}
-
-bool SDWriteSettings() {
-    char sdbuf[256];
-    char cFactor[64];
-
-    if (SDStatus) {
-        dtostrf(sddata.curFactor, 6, 2, cFactor);
-        sprintf((char *)&sdbuf[0], sdini_format, sddata.id, sddata.analogMin, sddata.analogMax, sddata.literMax, sddata.limitLow, sddata.limitHigh, cFactor);
-        Serial.println((char *)&sdbuf[0]);
-        SD.remove(SETTINGSFILE);
-        Serial.print("writing Settings to SD Card...");
-        if (SDSettings = SD.open(SETTINGSFILE, FILE_WRITE)) {
-            SDSettings.seek(0);
-            SDSettings.println((char *)&sdbuf[0]);
-            SDSettings.close();
-            Serial.println("ok.");
-        } else {
-            Serial.println("failed!");
-            SDStatus = false;
-        }
-    }
-}
-
-bool SDsetup() {
-    Serial.println("Initializing SD Card...");
-    
-    if (!SD.begin(chipSelect)) {
-        Serial.println("Initialization failed. Things to check:");
-        // DisplayPrint("Initialization failed. Things to check:");
-        Serial.println(" * is a card inserted?");
-        // DisplayPrint(" * is a card inserted?");
-        Serial.println(" * is your wiring correct?");
-        // DisplayPrint(" * is your wiring correct?");
-        Serial.println(" * did you change the chipSelect pin to matcjh your shield or module?");
-        SDStatus = false;
-    } else {
-        Serial.println("Wiring is correct and a card is present.");
-        // DisplayPrint("Wiring is correct and a card is present.");
-        SDReadSettings();
-        // print the type of card
-        SDStatus = SDWriteSettings();
-    }
-    // DisplayShow();
-}
-
 void setup() {
     int ret = 0;
   
-      /*-------------------------------------------------------------------
-     * Setup Pins for Valve and mode-setting
-     */
-    pinMode(VALVE_PIN, OUTPUT);
-
-    pinMode(MODE_PIN, INPUT_PULLUP);
-    pin_stat = old_stat = digitalRead(MODE_PIN);
-    Serial.print("ModePin: ");
-    Serial.println(pin_stat == LOW ? "Low" : "High");
-
-    delay(1500);
-
-    /* Prepare for NTP */
-    timestamp_t = 0;
-    boot_t = 0;
+    Timestamp = 0;
+    Booted = 0;
+    // rtc.setEpoch(0);
     ntp_time = false;
-    ntp.ruleDST("CEST", Last, Sun, Mar, 2, 120); // last sunday in march 2:00, timetone +120min (+1 GMT + 1h summertime offset)
-    ntp.ruleSTD("CET", Last, Sun, Oct, 3, 60); // last sunday in october 3:00, timezone +60min (+1 GMT)
-    ntp.updateInterval(1000);
 
     /*--------------------------------------------------------------
        Milliseconds start
       --------------------------------------------------------------*/
-    updateMillis = pubMillis = startMillis = millis();  //initial start time
+    updateMillis = pubMillis = millis();  //initial start time
     
     Serial.begin(115200);
+    /*-------------------------------------------------------------------
+     * Setup Pins for Valve and mode-setting
+     */
+    pinMode(ERROR_PIN, INPUT_PULLUP);
+    pinMode(VALVE_PIN, OUTPUT);
+    pinMode(MODE_PIN, INPUT_PULLUP);
+
+    pin_stat = old_stat = digitalRead(MODE_PIN);
+    Serial.print("ModePin: ");
+    Serial.println(pin_stat == LOW ? "Low" : "High");
+
+    delay(3000);
 
     SDsetup();
-
-    Serial.println("Initializing Ethernet TCP and UDP");
+    
+    Serial.println("Initializing TCP");
   
+    u8g2.begin();
+
+    ret = Ethernet.begin(mac);
+
     if (Ethernet.hardwareStatus() != EthernetNoHardware && Ethernet.linkStatus() == LinkON) {
-        ret = Ethernet.begin(mac);
         if (ret == 0) {
             Ethernet.begin(mac, ip, ns, gw, sn);
         }
         Udp.begin(8888);
-
         Serial.println(ret == 0 ? "Static" : "Dhcp");
         Serial.print("localIP: ");
         Serial.println(Ethernet.localIP());
@@ -721,47 +818,49 @@ void setup() {
         Serial.println(Ethernet.gatewayIP());
         Serial.print("dnsServerIP: ");
         Serial.println(Ethernet.dnsServerIP());
-        
+        mqttclient.setServer(mqttserver, 1883);
+        mqttclient.setCallback(MqttCallback);
+        MqttConnect();
         // Do NOT use localized Time form NTP - localization is done manually on display/printuing only
         Serial.println("Setup NTP");
-        delay(2000);    // Wait 2 Seconds
+        ntp.ruleDST("CEST", Last, Sun, Mar, 2, 120); // last sunday in march 2:00, timetone +120min (+1 GMT + 1h summertime offset)
+        ntp.ruleSTD("CET", Last, Sun, Oct, 3, 60); // last sunday in october 3:00, timezone +60min (+1 GMT)
+        ntp.updateInterval(1000);
+        delay(2000);
         ntp.begin();
     } else {
-        Serial.println("Either no Ethernet-Hardware-Shield or no Link");
+        Serial.println("No Ethernet - either no Hardware attached or no Link!");
     }
 
-    /* Connect to MQTT-Server, it fails when Ethernet is not up, but will retry and not block */
-    mqttclient.setServer(mqttserver, 1883);
-    mqttclient.setCallback(MqttCallback);
-    MqttConnect();
-
-    /* Start Display */
-  
-    u8g2.begin();
     Display();
+
+    Serial.println("Setup Done!");
 }
 
+
 void Display() {
-  
+#ifdef DEBUG
+    return;
+#endif
     u8g2.clearBuffer();					// clear the internal memory
     u8g2.setFont(u8g2_font_t0_11_tf);	// choose a suitable font
 
     sprintf(buf, "%s", VERSION);
     u8g2.drawStr(0,10, buf);	// write something to the internal memory
-    sprintf(buf, "Level : %4d l, %3d%%", liter, percent);
+    sprintf(buf, "Level : %4d l, %3d%%", Liter, Prozent);
     Serial.println(buf);
     u8g2.drawStr(0,20, buf);	// write something to the internal memory
     if (!setmode) {
-        sprintf(buf, "Modus : %s", modus);
+        sprintf(buf, "Modus : %s", Modus);
     } else {
-        sprintf(buf, "Modus : %s(%d)", modus, mode_count);
+        sprintf(buf, "Modus : %s(%d)", Modus, mode_count);
     }
     u8g2.drawStr(0,30, buf);
-    sprintf(buf, "Status: %s", reasons[reason]);
+    sprintf(buf, "Status: %s", ReasonText);
     u8g2.drawStr(0,40, buf);
-    sprintf(buf, "Ventil: %s", ventil);
+    sprintf(buf, "Ventil: %s", Ventil);
     u8g2.drawStr(0,50, buf);
-    u8g2.drawStr(0,60, datzeit);
+    u8g2.drawStr(0,60, Timestamp.toString());
 
     u8g2.sendBuffer();					// transfer internal memory to the display
 }
@@ -770,12 +869,13 @@ void Display() {
 void loop() {
     // put your main code here, to run repeatedly:
 
+    sct013.Read(offset);
+    Sonde.Read();
+
     pin_stat = digitalRead(MODE_PIN);
     pinMillis = millis();
     publish = false;
-    Sonde.Read();
-    SCT013.ReadAC();
-
+    
     if (pin_stat == LOW) {
         if (pinMillis - lastMillis > 200) {
             Serial.println("Impuls Low");
@@ -787,66 +887,70 @@ void loop() {
                 sprintf(buf, "Button: Enter Settings-Mode %d (%s)", mode, modes[mode]);
                 Serial.println(buf);
             } else {
-                mode--;
-                if (mode < 0) {
-                    mode = 2;
+                Mode = Mode - 1;
+                if (Mode < 0) {
+                    Mode = 2;
                 }
-                modus = modes[mode];
-                sprintf(buf, "Button: Mode change to %d (%s)", mode, modes[mode]);
+                Modus = modus = modes[Mode];
+                sprintf(buf, "Button: Mode change to %d (%s)", Mode, Modus);
                 Serial.println(buf);
             }
         }
     }
 
-    if (mqttclient.connected()) {
-        mqttclient.loop();
-    }
 
-    /******************************************************************************************
-    SEND_INTERVAL (30 Sekunden) Sekunden Takt
-    *****************************************************************************************/ 
-    if ((millis() - pubMillis) > SEND_INTERVAL * SEKUNDE) { // Alle 30 Sekunden
-        state = sonde >= sddata.analogMin;             // Sondenfehler ?
-        // Erst nach 2 Minuten das erste mal senden - bis dahin hat sich der Wert eingeregelt
-        if (timestamp_t - boot_t > 2 * SECONDS_PER_MINUTE) {
-            publish = true;
+    if ((millis() - pubMillis) > SEND_INTERVAL * 1000) { // Alle 30 Sekunden
+        for (int i = 0; i < (sizeof(topics) / sizeof(topics[0])); i++) {
+            topics[i]->Changed();
         }
+        SDLogData();
+        MqttPublish();
         pubMillis = millis();
     }
- 
-    /******************************************************************************************
-    1 Sekunden Takt
-    *****************************************************************************************/ 
     if (millis() - updateMillis >= SEKUNDE) { // Hier eine Sekunde warten
-        //´Wenn noch keine Zeit geholt wurde oder neu geholt werden muss
-        if (timestamp_t == 0 || !ntp_time && (Ethernet.hardwareStatus() != EthernetNoHardware && Ethernet.linkStatus() == LinkON)) {
-            // GetNTPTime();
-            ntp.update();
-            timestamp_t = ntp.epoch();
+        if (mqttclient.connected()) {
+            mqttclient.loop();
         }
-
-        // ReadAnalog();
-        sonde = Sonde.Value();
-        percent = sonde * 100 / sddata.analogMax;
-        liter = sonde * sddata.literMax / sddata.analogMax;      // calculate liter
+        StatusSonde = Analog >= sddata.analogMin;             // Sondenfehler ?
+        Serial.println("Analogen Wert lesen Sonde");
+        /* Analoger Wert der Sonde geglättet */
+        Analog = Sonde.Value();
+        Serial.println("Restart Sonde");
         Sonde.Restart();
 
-        CheckEthernet();
-        Uptime();
-        Serial.print("Ampere : ");
-        Serial.println(SCT013.Amp());
-        dtostrf(SCT013.Amp(), 6, 2, buf);
+        Prozent = Analog * 100 / AnalogMax;
+        Liter = Analog * LiterMax / AnalogMax;      // calculate liter
 
+        /* Analoger Wert des Stromsensors geglättet */
+        Serial.println("Analogen Wert lesen Stromsensor");
+        Current = sct013.Amp();
+        if (Current > 0) {
+            HyaRain = "On";
+        } else {
+            HyaRain = "Off";
+        }
+        Power = sct013.Watt();
+        KWh = sct013.KWh();
 
-        // sprintf(timestamp, "%d.%d.%d %02d:%02d:%02d", (int)rtc.getDay(), (int)rtc.getMonth(), (int)rtc.getYear(), (int)rtc.getHours(), (int)rtc.getMinutes(), (int)rtc.getSeconds());
-        // sprintf(timestamp, "%s", PrintTimeStamp(localTimefromUTC(timestamp_t)));
-        sprintf(timestamp, "%s", ntp.formattedTime("%d.%m.%Y %H:%M:%S"));
+        offset = sct013.Offset();
+        sct013.Restart();
 
+        if (Ethernet.hardwareStatus() != EthernetNoHardware && Ethernet.linkStatus() == LinkON) {
+            ntp.update();
 
+            // Serial.println("Get NTP-Time Epoch");
+            Timestamp = ntp.epoch();
+            // sprintf(timestamp, "%d.%d.%d %02d:%02d:%02d", (int)rtc.getDay(), (int)rtc.getMonth(), (int)rtc.getYear(), (int)rtc.getHours(), (int)rtc.getMinutes(), (int)rtc.getSeconds());
+            // sprintf(timestamp, "%s", PrintTimeStamp(localTimefromUTC(timestamp_t)));
+            // sprintf(timestamp, "%s", ntp.formattedTime("%d.%m.%Y %H:%M:%S"));
+        }
         
-        if (boot_t == 0) {
-            boot_t = timestamp_t;
-            sprintf(booted, "%s", timestamp);
+        // ReadAnalog();
+        CheckEthernet();
+        CalcUptime();
+
+        if (Booted == 0) {
+            Booted = Timestamp.getData();
         }
 
         if (setmode) {
@@ -863,42 +967,41 @@ void loop() {
             }
         }
         if (!setmode) {
-            if (mode == MODE_ZISTERNE) {
+            if (Mode == MODE_ZISTERNE) {
                 new_valve = VALVE_ZISTERNE;
-                reason = 0;
-            } else if (mode == MODE_HAUSWASSER) {
+                Reason = 0;
+            } else if (Mode == MODE_HAUSWASSER) {
                 new_valve = VALVE_HAUSWASSER;
-                reason = 0;
-            } else if (mode == MODE_AUTO) {
-                if (liter >= sddata.limitHigh) {
+                Reason = 0;
+            } else if (Mode == MODE_AUTO) {
+                if (Liter >= sddata.limitHigh) {
                     new_valve = VALVE_ZISTERNE;
-                    reason = 1;
+                    Reason = 1;
                 }
-                if (liter <= sddata.limitLow) {
+                if (Liter <= sddata.limitLow) {
                     new_valve = VALVE_HAUSWASSER;
-                    reason = 2;
+                    Reason = 2;
                 }
             }
-            modus = modes[mode];
+            ReasonText = reasons[Reason];
+
+            Modus = modes[Mode];
         }
         /*-----------------------------------------------------------
-         * Wenn Ventil umzuschalten ist
+        * Wenn Ventil umzuschalten ist
         */
-        if (new_valve != valve) {
+        if (new_valve != Valve) {
             publish = true;
-            valve = new_valve;
-            ventil = valves[valve];
-            digitalWrite(VALVE_PIN, valve);
-            sprintf(buf, "Mode: %s, set Valve to %s (%s)", modes[mode], ventil, reasons[reason]);
+            Valve = new_valve;
+            Ventil = valves[Valve];
+            digitalWrite(VALVE_PIN, Valve);
+            sprintf(buf, "Mode: %s, set Valve to %s (%s)", Modus, Ventil, ReasonText);
             Serial.println(buf);
         }
+
         // print out to Display
         Display();
-        updateMillis = millis();
-    }
-    if (publish) {
-        Serial.println(ntp.formattedTime("%d.%m.%Y %H:%M:%S"));
         MqttPublish();
-        SDLogData();
+        updateMillis = millis();
     }
 }
