@@ -72,7 +72,15 @@ char uptime[20];
 char *up = &uptime[0];
 
 char buf[255];
-/* ---------------------------- Topics ----------------------------------- */
+/* ---------------------------- Topics -----------------------------------
+   Basisklassen für ein MQTT - Topic. Die Klasse speichert ein Topic bestehend aus
+   dem Topic-Namen, einem Wert des Topics, (INteger, float, double, bool oder char*
+   sowie den Änderungszustand des Topics.
+   Basisklasse TopicBase
+   Die Klasse Topic überlagert TopicBase und implementiert die Methoden zur Kommunikation mit
+   dem Broker oder zum setzen, lesen von Werten.
+   Die Klasse Topic überlagert auch den Operator "=" - Das Topic lässt sich benutzen wie eine Variable.
+   ----------------------------------------------------------------------- */
 // Ersatz für std::is_same (Arduino-kompatibel)
 template<typename A, typename B>
 struct is_same_type { static const bool value = false; };
@@ -168,7 +176,7 @@ class Topic : public TopicBase {
         };
 };
 
-
+/* Definition der Topics zur Speicherung der Daten sowhol hier im Code, als auch in Richtung Broker */
 Topic<time_t>   Timestamp("Timestamp", 0);
 Topic<int>      Mode("Mode", 0);
 Topic<int>      Valve("Valve", VALVE_ZISTERNE);
@@ -198,26 +206,33 @@ TopicBase* topics[] = { &Timestamp, &Mode, &Valve, &Analog, &Liter, &LimitLow, &
                         &Current, &Power, &KWh, &Reason, &ReasonText};
 
 
-/* ------------------------------ Analog Input ---------------------- */
+/* ------------------------------ Analog Input ---------------------------
+   Basisklasse zur Behandlung von analogen Inputs
+   Instantiiert für einen Analogen Eingang, optional wird ein Offset/Average
+   für den Messwert mitgegeben - nützlich für Messwerte, die um einen Mittelpunkt schwanken
+   ----------------------------------------------------------------------- */
 class AI {
     protected:
         int pin;
         int count;
         long aggregate;
-        long offset;
+        long average;
     public:
-        AI(int _pin, int _offset = 0) {
-            pin = _pin; count = 0; aggregate = 0; offset = offset;
+        AI(int _pin, int _average = 0) {
+            pin = _pin; count = 0; aggregate = 0; average = _average;
         };
+        // Anzahl Messungen
         int Count() {
             return count;
         };
-        void Read(int _offset = 0) {
+        // Messwert lesen am Eingang, Aufsummieren, Anzahl Messungen erhöhen und Average mitlaufen lassen (aufaddieren), der Messwert wird als absolute Differenz zum Average/Mittelwert betrachtet
+        void Read(int _average = 0) {
             int val = analogRead(pin);
-            aggregate += abs(val - _offset);
-            offset += val;
+            aggregate += abs(val - _average);
+            average += val;
             count++;
         };
+        // Wert zurückgeben, dabei die Summe der Messwerte durch die Anzahl teilen
         int Value() {
             if (count > 0 && aggregate > 0) {
                 return max(aggregate / count - 1, 0);
@@ -225,24 +240,31 @@ class AI {
                 return 0;
             }
         };
-        int Offset() {
+        // Average zurückgeben (das ist der Mittelwert der Messungen - bei )
+        int Average() {
             if (count > 0) {
-                return offset / count;
+                return average / count;
             } else {
                 return 0;
             }
         };
+        // Messreihe neu starten, alle Werte zurücksetzen
         void Restart() {
             aggregate = 0;
             if (count > 0) {
-                offset = offset / count;
+                average = average / count;
             } else {
-                offset = 0;
+                average = 0;
             }
             count = 0;
         };
 };
 
+/* ------------------------------ Analog Input ---------------------------
+   Energy - Klasse für die Messwertermittlung von Werten des Stromsensors SCT013
+   die Werte am Eingang A1 sind über den Spannungsteiler an A1 um 1,65V angehoben
+   und oszillieren um 512 herum - Mittelpunkt, Average wird mit 512 begonnen
+   ----------------------------------------------------------------------- */
 class Energy : public AI {
     private:
         double ampmax;  // Maximale Ampere bei maximaler Amplitude -> 1, 5, 10, 30, 100 Amp
@@ -274,11 +296,17 @@ class Energy : public AI {
             wattseconds = 0;
             wattmillis = millis();
             watt = 0;
+            // Scale ist der Faktor mit dem der analoge Messwert multipliziert werden muss. Er ergibt sich aus:
+            // maximalem Messbereich des Sensors in Ampere , maximaler Referenzspannung (Arduino Zero = 3.3)
+            // minimaler Referenzspannung (0.0), dem Maximalen Wert des Analogen Inputs (1024) dem minimalen Wert (0)
+            // und der maximalen Spannung des Sensors SCT013 (1V)
             scale = ampmax * (vrefmax - vrefmin) / (imax - imin) / vmax;
         };
+
         double Scale() {
             return scale;
         };
+
         double Amp() {
             if (count > 0 && aggregate > 2 * count) {
                 amp = max(((double) aggregate / (double)count - 1.0), 0) * scale;
@@ -320,9 +348,9 @@ class Energy : public AI {
 
             aggregate = 0;
             if (count > 0) {
-                offset = offset / count;
+                average = average / count;
             } else {
-                offset = 0;
+                average = 0;
             }
             count = 0;
             wattmillis = millis();
@@ -331,7 +359,7 @@ class Energy : public AI {
 
 AI Sonde(A0);                               // Drucksonde Zisterne an A0
 Energy sct013(A1, 5.0, 1.0, 230, 3.3);      // Energiesensor SCT013 - 5A, 1V, 230V Netzspannung, 3.3V VCC Arduino (MKR Zero) an A1
-int offset = 512;                           // Mittelpunkts-Wert selbstkalibrierend für Stromsensor SCT013
+int average = 512;                           // Mittelpunkts-Wert selbstkalibrierend für Stromsensor SCT013
 
 /* ----------------------------- Ethernet ---------------------------- */
 #include <Ethernet.h>
@@ -867,7 +895,7 @@ void Display() {
 void loop() {
     // put your main code here, to run repeatedly:
 
-    sct013.Read(offset);
+    sct013.Read(average);
     Sonde.Read();
 
     pin_stat = digitalRead(MODE_PIN);
@@ -930,7 +958,7 @@ void loop() {
         Power = sct013.Watt();
         KWh = sct013.KWh();
 
-        offset = sct013.Offset();
+        average = sct013.Average();
         sct013.Restart();
 
         if (Ethernet.hardwareStatus() != EthernetNoHardware && Ethernet.linkStatus() == LinkON) {
