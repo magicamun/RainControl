@@ -20,7 +20,33 @@ Stromsensor SCT013 - 5A, 1V (https://www.amazon.de/HUABAN-Nicht-invasiver-Split-
 Bauteile für die Schaltung (https://www.conrad.de/de/service/wishlist.html?sharedId=8f9d7077-cee6-41a0-b912-274e74244384)
 
 Steckernetzteil 24V DC
-- Spannungswandler [TSR-1 2433 (WaNdlung Eingangsspannung 24V auf 3,3V](https://www.conrad.de/de/p/tracopower-tsr-1-2433-dc-dc-wandler-print-24-v-dc-3-3-v-dc-1-a-75-w-anzahl-ausgaenge-1-x-inhalt-1-st-156671.html)
+- Spannungswandler [TSR-1 2433 (Wandlung Eingangsspannung 24V auf 3,3V](https://www.conrad.de/de/p/tracopower-tsr-1-2433-dc-dc-wandler-print-24-v-dc-3-3-v-dc-1-a-75-w-anzahl-ausgaenge-1-x-inhalt-1-st-156671.html) zur Versorgung der Schaltung mit 3,3V
+- Strom/Spannungswandler zur Wandlung des Stroms der Sonde in Spannung inkl. Kalibrierung von 0-Punkt und Max (Ali - Express: Strom-Spannungs-Modul 0-20 mA/4-20 mA bis 0-3,3 V/0 -5V/0 -10V Spannungssender-Signal wandler modul)
+
 - Relais [36.11 Schaltspannung 3V](https://www.conrad.de/de/p/finder-36-11-9-003-4011-printrelais-3-v-dc-10-a-1-wechsler-1-st-3323202.html)
 - Steckerleisten 14 polig
+- Transistor BC337 (Schaltung Relais und LED
+- Diode (1N 4148)
+- Widerstände
+-   2x 10k
+-   2x 330 Ohm
+Elko:
+- 10uF
+LED:
+- Rot, 3mm
+
+Display
 - 
+
+Schraubklemmblöcke zum Anschluss von 
+- 3 x 2 polig (Sonde Zisterne, Spannungsversorgung 24V, Stromsensor SCT 013)
+- 1 x 3-polig (Umschaltung Regenwasserpumpe, Übersteuerung Schwimmerschaltung - ACHTUNG - 230V)
+
+Zur Verbindung von Controllerplatine mit der Displayplatine:
+
+2 x Wannenstecker 8polig
+2 x Buchsenstecker 8 polig 
+1 x Flachbandkabel 8 polig
+
+
+Platinenlyout mittels KiCad - 2 Projekte - eines für das Display
