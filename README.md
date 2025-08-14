@@ -36,7 +36,8 @@ LED:
 - Rot, 3mm
 
 Display
-- 
+- 2,42" 128X64-OLED-Anzeigemodul SPI - 2.42 Zoll OLED Bildschirm kompatibel mit Arduino UNO R3 - Weiße Schrift OLED :
+https://www.az-delivery.de/products/oled-2-4-white?variant=44762703986955&utm_source=google&utm_medium=cpc&utm_campaign=16964979024&utm_content=166733588295&utm_term=&gad_source=1&gbraid=0AAAAADBFYGXj7s2C_h3TASz0DupxomgUw&gclid=EAIaIQobChMI-YCAy9LmjAMVH5CDBx0H8zKnEAQYAyABEgLpafD_BwE
 
 Schraubklemmblöcke zum Anschluss von 
 - 3 x 2 polig (Sonde Zisterne, Spannungsversorgung 24V, Stromsensor SCT 013)
