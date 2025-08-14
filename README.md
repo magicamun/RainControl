@@ -80,5 +80,38 @@ Strom, Pumpe an oder aus:
 
 Das Display zeigt Datum, Uhrzeit, Füllstand und Betriebsmodus an
 
+Mit dem an RST angeschlossenen Taster lässt sich der Controller resetten.
 
-Am 
+Funktionsweise Software:
+
+Sämtliche Systemzustände werden bei Veränderung alle Sekunde an einen MQTT-Broker gesendet, spätestens alle 30 Sekunden. Das System führt folgende Werte:
+
+- Timestamp  (Datum, Uhrzeit)
+- Mode       (0 = Zisterne, 1 = Hauswasser, 2 = Auto) -> Betriebsmodus
+- Valve      (0 = Zisterne, 1 = Hauswasser) -> Ventilstellung
+- Analog     (0-1023) -> Analoger Messwert der Pegelsonde (0-1023)
+- Liter      -> Füllung in Liter
+- LimitLow   -> Unterer Schwellwert in Liter
+- LimitHigh  -> Oberer Schwellwert in Liter
+- LiterMax   -> maximales Füllvolumen wird benötigt zur Umrechnung des analogen Wertes in Liter (Analog = LiterMax / AnalogMax)
+- Prozent    -> Füllstand in %
+- Uptime     -> Zeit seit l. Boot/Neustart
+- StatusSonde-> Ist eine Sonde korrekt angeschlosen (Wenn der Analoge Wert unter einem Minimum liegt, dann ist davon auszugehen, dass die Sonde nicht korrekt angeschlossen ist
+- Ventil     -> Ventilstellung als Text ("Zisterne", "Hauswasser")
+- Modus      -> Modus als Text
+- HyaRain    -> Pumpe läuft (ON), oder nicht (OFF)
+- Booted     -> Boot-Zeitpunkt
+- AnalogMin  -> mindestwert, den die Sonde liefern muss, damit Sonde als vorhanden erkannt wird
+- AnalogMax  -> Maximaler analoger Wert an A0 für volle Zisterne
+- Current    -> Stromverbrauch in Ampere
+- Power      -> Watt (Volt * Leistung pro Sekunde
+- KWh        -> KLilowattstunden
+- Reason     -> Grund für Ventilstellung (0 = "Manuell", 1 = "Zisterne voll", 2 = "Zisterne leer")
+- Reasontext -> Reason als Text
+
+Per MQTT kann der Controller aber auch gesteuert werden:
+ - cmd/Mode [0,1,2] -> Es kann der Modus umgestellt werden (nicht nur per Taster)
+ - cmd/Limit [low|high]=<Number> -> Einstellen der Schwellwerte 
+ - cmd/Calibrate [analogmin|analogmax|litermax]=<number> -> Einstelen der Kalibrierung in der Software nach dem die Sonde und der Wandler kalibriert wurden
+
+Bei eingelegter SD-Card werden die Daten über einen Reset hinaus auf der SD-Card gespeichert und nach Neustart gelesen
