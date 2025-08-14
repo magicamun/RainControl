@@ -42,7 +42,7 @@ Hardware:
   Zur Verbindung von Controllerplatine mit der Displayplatine:
   
   2 x [Wannenstecker 8polig](https://www.conrad.de/de/p/bkl-electronic-10120552-stiftleiste-ohne-auswurfhebel-rastermass-2-54-mm-polzahl-gesamt-8-anzahl-reihen-2-1-st-741552.html?hk=SEM&WT.mc_id=google_pla&utm_source=google&utm_medium=cpc&utm_campaign=DE+-+PMAX+-+Nonbrand+-+Learning&utm_id=20402606569&gad_source=1&gad_campaignid=20392975386&gbraid=0AAAAAD1-3H7MMs8aUj1DVyRg7EW9yTu3l&gclid=CjwKCAjwkvbEBhApEiwAKUz6--gW1qskdMad7NtT7sFPgiCQdok8dU4I2qlc02XzfEHAeNsRRdUxyhoCCR4QAvD_BwE)
-  2 x Pfostensteckverbinder mit Zugentlastung https://www.conrad.de/de/p/tru-components-1580952-pfosten-steckverbinder-mit-zugentlastung-rastermass-2-54-mm-polzahl-gesamt-8-anzahl-reihen-2-1-1580952.html?hk=SEM&WT.mc_id=google_pla&utm_source=google&utm_medium=cpc&utm_campaign=DE+-+PMAX+-+Nonbrand+-+Learning&utm_id=20402606569&gad_source=1&gad_campaignid=20392975386&gbraid=0AAAAAD1-3H7MMs8aUj1DVyRg7EW9yTu3l&gclid=CjwKCAjwkvbEBhApEiwAKUz6--gW1qskdMad7NtT7sFPgiCQdok8dU4I2qlc02XzfEHAeNsRRdUxyhoCCR4QAvD_BwE
+  2 x [Pfostensteckverbinder mit Zugentlastung](https://www.conrad.de/de/p/tru-components-1580952-pfosten-steckverbinder-mit-zugentlastung-rastermass-2-54-mm-polzahl-gesamt-8-anzahl-reihen-2-1-1580952.html?hk=SEM&WT.mc_id=google_pla&utm_source=google&utm_medium=cpc&utm_campaign=DE+-+PMAX+-+Nonbrand+-+Learning&utm_id=20402606569&gad_source=1&gad_campaignid=20392975386&gbraid=0AAAAAD1-3H7MMs8aUj1DVyRg7EW9yTu3l&gclid=CjwKCAjwkvbEBhApEiwAKUz6--gW1qskdMad7NtT7sFPgiCQdok8dU4I2qlc02XzfEHAeNsRRdUxyhoCCR4QAvD_BwE)
   1 x Flachbandkabel 8 polig
   
   
