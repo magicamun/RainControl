@@ -123,15 +123,16 @@ Nach dem Zusammenbau, der Bestückung der Platine erfolgt schrittweise die Inbet
    Am Pin 3 der Stiftleiste für den Arduino müssen gegenüber GND (Pin 4) 3,3Volt anliegen
 2. Einstellen des Strom/Spannungswandlers (idealerweise bei voller Zisterne)
    Zum Einstellen des Stromspannungswandlers wird an der Stiftleiste "Probe" ein Multimeter zur Spannungsmessung angeschlossen. Ohne Sonde liefert das Multimeter dann 0V. Dann wird die Sonde angeschlossen und noch nicht in die Zisterne herabgelassen - Nullpunkteinstellung für "leer". Mit dem linken Poti dreht man jetzt solange nach linke (kleiner) oder nach rechtes (größer), bis die gemessene Spannung verlässlich nah an 0V liegt aber eben noch größer als 0V ist. Jetzt kann die Sonde in die Zisterne gelassen werden - so tief, wie möglich. Zur korrekten Kalibrierung des Maximalwertes ist es am einfachsten den maximalen Füllstand auch zur EInstellung der maximalen Spannung zu nutzen. Dazu dreht man jetzt am rechten Poti des Wandlers (links kleiner, rechts größer) bis die gemessene Spannung nah bei 3,3V ist. Es empfiehlt sich etwas "Luft" zu lassen. Wenn die Zisterne nicht voll ist, sollte man abschätzen können, wie voll (in Prozent) sie ist, man kann dann ausgehend vom Zielwert bei "Zisterne Voll" nah bei 3,3V und dem unteren Messwert für leer den Spannungswert, den man jetzt messen möchte im Dreisatz ableiten.
-4. Aufspielen der Software auf den Arduino
-5. Board stromlos machen / Spannungsversorgung trennen
-6. Aufstecken des Arduino und des Ethernet-Shields auf die Buchsenleisten 14 polig
-7. Verbinden des Displays mit dem Controller
-8. Netzteil anschließen
-9. Der Arduino bootet und auf dem Display werden die Daten angezeigt
-10. Die Daten werden zyklisch an den MQTT-Broker verteilt.
-11. Prüfung der Messwerte am Broker
-12. Es empfiehlt sich, dass nach ein paar Wochen Betrieb und Leer, Voll-Zyklen nochmal die Messwerte der Kalibrierung geprüft werden und notfalls nochmal in der Software neu eingestellt werden - entweder per MQTT oder "hart" per Software
+4. Anpassen der Grundeinstellungen in der Software
+5. Aufspielen der Software auf den Arduino
+6. Board stromlos machen / Spannungsversorgung trennen
+7. Aufstecken des Arduino und des Ethernet-Shields auf die Buchsenleisten 14 polig
+8. Verbinden des Displays mit dem Controller
+9. Netzteil anschließen
+10. Der Arduino bootet und auf dem Display werden die Daten angezeigt
+11. Die Daten werden zyklisch an den MQTT-Broker verteilt.
+12. Prüfung der Messwerte am Broker
+13. Es empfiehlt sich, dass nach ein paar Wochen Betrieb und Leer, Voll-Zyklen nochmal die Messwerte der Kalibrierung geprüft werden und notfalls nochmal in der Software neu eingestellt werden - entweder per MQTT oder "hart" per Software
 
 
 
