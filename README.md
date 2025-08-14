@@ -6,8 +6,10 @@ Das Projekt basiert auf der Arbeit aus diesem Repo:
 
 https://github.com/Eisbaeeer/Arduino.Ethernet.Zisterne
 
+Der Nano war aber am Limit was den Speicherplatz angeht und selbst kleinste Optimierungen führten zu zu großen Images oder liefen im Betrieb instabil, daher habe ich das Projekt auf anderer Hardware aufgesetzt. Zugegeben - das ist jetzt deutlich teurer aber macht so auch mehr Spaß (finde ich).
+
 Hardware:
-  [Arduino MKR Zero](https://store.arduino.cc/collections/mkr-family/products/arduino-mkr-zero-i2s-bus-sd-for-sound-music-digital-audio-data) - Die Leistung des Nano (insbesondere Speicher) hat nicht ausgereicht die Steuerung ohne Abstriche so erweitert umzusetzen
+  [Arduino MKR Zero](https://store.arduino.cc/collections/mkr-family/products/arduino-mkr-zero-i2s-bus-sd-for-sound-music-digital-audio-data) 
   
   [MKR Ethernet-Shield](https://store.arduino.cc/collections/mkr-family/products/arduino-mkr-eth-shield) - Zur Anbindung an eine Hausatomation, bzw. an einen MQTT-Broker (IOBroker)
   
@@ -55,7 +57,7 @@ Platinenlyout mittels KiCad - 2 Projekte - eines für das Display, eines für de
 Funktionsweise technisch:
 
 Füllstand:
-  Die Sonde wird mit 24V betrieben und da bietet sich ein Netzteil handelsübluch an und eine Spannungswandlung (TSR-1 2433) von den 24V DC auf 3,3V für den Rest der Schaltung (Arduino MKR Zero, Relais, Display).
+  Die Sonde wird mit 24V betrieben und da bietet sich ein Netzteil handelsüblich an und eine Spannungswandlung (TSR-1 2433) von den 24V DC auf 3,3V für den Rest der Schaltung (Arduino MKR Zero, Relais, Display).
   Die Sonde liefert einen Strom in Abhängigkeit vom Druck (Füllstandshöhe). Der Wandler macht aus dem Strom eine Ausgangsspannung von 0 bis Vmax (3,3V).
   Diese Spannung wird am A0 (AnalogInput 0) des Arduino erfasst und in einen Füllstand umgerechnet - der Füllstand (Volumen) ist proportional zum gemessenen Wert an A0. (Voraussetzung ist ein Behälter, dessen Füllstand (Volumen) sich linear proportional zum Druck verhält (Senkrechter Zylinder).
   
@@ -63,10 +65,10 @@ Füllstand:
   ACHTUNG: Die Kalibrierung muss ohne angeschlossenen Arduino erfolgen um Beschädigungen durch Überspannung am Eingang des Arduino zu vermeiden.
   -> Siehe Kalibrierung und Inbetriebnahme.
   
-  In Abhängigkeit von der gemessenen Füllhöhe und zwei einzustellenden Werten (LimitLow, LimitHigh) schaltet der Arduino das Relais sowie eine LED über PIN D14 an oder aus. Damit bei unterem Schwellwert / Minimum nicht sofort bei erneutem überschreiten (Nachlauf Regen) wieder zurück geschaltet wird, gibt es einen weiteren Wert (Oberer Schwellwert) der erreicht werden muss, damkt zurück auf Zisterne geschlatet wird.
+  In Abhängigkeit von der gemessenen Füllhöhe und zwei einzustellenden Werten (LimitLow, LimitHigh) schaltet der Arduino das Relais sowie eine LED über PIN D14 an oder aus. Damit bei unterem Schwellwert / Minimum nicht sofort bei erneutem überschreiten (Nachlauf Regen) wieder zurück geschaltet wird, gibt es einen weiteren Wert (Oberer Schwellwert) der erreicht werden muss, damkt zurück auf Zisterne geschaltet wird.
 
 Strom, Pumpe an oder aus:
-  Über den Stromsensor SCT013 kann der Zustand der Pumpe (Regenwassernutzung) abgefragt werden, ohne in die Anlage eingreifen zu müssen. Dazu wird der Stromsensor unter der Beachtung der Stromflussrichtung um die Phase (nur die Phase) zur Pumpe gelegt. Am Ausgang des Sensors wird über Induktion eine Wechselspannung abgegeben. Dabei sind die Werte des Sensors zur korrekten Berechnung des Stroms und der Leistung in der Software einzustellen. Wichtig ist eine korrekte Dimensionierung des Sensors - es gibt unterschiedliche Typen. Für eine möglichst feine Auflösung ist der Ampere-Wert des Sensors möglichst klein zu wählen - aber groß genug, dass bei Vollast der Pumpe der Wert der Leistung ausreicht. Der hier benutzte Sensor misst bis 5A -> 1,1kw. Meine Pumpe hat 800 Watt Leistungsaufnahme. Gleichzeitig soll der Sensor möglichst große Spannungswerte am Ausgang produzieren, damit die Auflösung des Wertes möglichst fein/genau ist. Es gibt die Sensoren mit 0,33V und 1V Ausgangsspannung -> ich nutze hier 1V. Da die Spannung eine Wechselspannung ist (mit diesem Sensor im Bereich von +1V und -1V) wird über den Spannungsteiler am Sensor  die Wechselspannung um +1,65V angehoben. Der analoge Wert an A1 wird in einen Wert für den Stromverbrauch umgerechnt. Dazu ist es wichtig, den Messbereich des Sensors, die Ausgangsspannung des Sensors und den Referenzwert am Arduino (Zero 3,3V) zu kennen und in der Software einzustellen.
+  Über den Stromsensor SCT013 kann der Zustand der Pumpe (Regenwassernutzung) abgefragt werden, ohne in die Anlage eingreifen zu müssen. Dazu wird der Stromsensor unter der Beachtung der Stromflussrichtung um die Phase (nur die Phase) zur Pumpe gelegt. Am Ausgang des Sensors wird über Induktion eine Wechselspannung abgegeben. Dabei sind die Werte des Sensors zur korrekten Berechnung des Stroms und der Leistung in der Software einzustellen. Wichtig ist eine korrekte Dimensionierung des Sensors - es gibt unterschiedliche Typen. Für eine möglichst feine Auflösung ist der Messbereich (Ampere) des Sensors möglichst klein zu wählen - aber groß genug, dass bei Vollast der Pumpe der Wert der Leistung ausreicht. Der hier benutzte Sensor misst bis 5A -> 1,1kw. Meine Pumpe hat 800 Watt Leistungsaufnahme. Gleichzeitig soll der Sensor möglichst große Spannungswerte am Ausgang produzieren, damit die Auflösung des Wertes möglichst fein/genau ist. Es gibt die Sensoren mit 0,33V und 1V Ausgangsspannung -> ich nutze hier 1V. Da die Spannung eine Wechselspannung ist, wird über den Spannungsteiler am Sensor die Wechselspannung um +1,65V angehoben. Der analoge Wert an A1 wird in einen Wert für den Stromverbrauch umgerechnt. Dazu ist es wichtig, den Messbereich des Sensors, die Ausgangsspannung des Sensors und den Referenzwert am Arduino (Zero 3,3V) zu kennen und in der Software einzustellen.
 
 Am Pin D13 ist ein Taster von der Displayplatine angeschlossen, mit dem der Betriebsmodus der Steuerung manuell gesetzt werden kann:
   - Auto - Der Arduino übernimmt die Ventilsteuerung (Relais und Ansteuerung Schwimmerschalter der Pumpe) in abhängigkeit des Füllstandes
@@ -81,6 +83,9 @@ Am Pin D13 ist ein Taster von der Displayplatine angeschlossen, mit dem der Betr
 Das Display zeigt Datum, Uhrzeit, Füllstand und Betriebsmodus an
 
 Mit dem an RST angeschlossenen Taster lässt sich der Controller resetten.
+
+Ventilsteuerung generell:
+Der Controller misst den Füllstand und (kann) in Abhängigkeit davon einen Schwimmerschalter für handelsübliche Zisternenpumpen ersetzen. Dazu ist die Steuerung der Pumpe auf "Automatik" zu stellen und statt des Schwimmerschalters ein 230V - Kabel vom Anschluss des Schwimmerschalters zum Controller (3 - polige Klemme) zu führen. Welche Klemmen am 3ploigen Schraubklemmenblock zu belegen sind, hängt von der Anlage, bzw. der (bisherigen) Verdrahtung des Schwimmerschalters ab. Probieren! Auf keinen Fall parallel zum Schwimmerschalter zu betreiben -> entweder, oder.
 
 Funktionsweise Software:
 
@@ -114,23 +119,24 @@ Per MQTT kann der Controller aber auch gesteuert werden:
  - cmd/Limit [low|high]=<Number> -> Einstellen der Schwellwerte 
  - cmd/Calibrate [analogmin|analogmax|litermax]=<number> -> Einstelen der Kalibrierung in der Software nach dem die Sonde und der Wandler kalibriert wurden
 
-Bei eingelegter SD-Card werden die Daten über einen Reset hinaus auf der SD-Card gespeichert und nach Neustart gelesen, wenn man darauf verzichtet, die Werte nach dem Aufspielen der Software und der Einstellung in der Software zu verändern ist eine SD-Card nicht nötig
+Bei eingelegter SD-Card werden die Daten über einen Reset hinaus auf der SD-Card gespeichert und nach Neustart gelesen, wenn man darauf verzichtet die Werte nach dem Aufspielen der Software und der Einstellung in der Software zu verändern ist eine SD-Card nicht nötig
 
-Nach dem Zusammenbau, der Bestückung der Platine erfolgt schrittweise die Inbetriebnahme - noch ohne Arduino. Buchsenleisten sind nützlich für den Arduino (quasi ein muss) und für den Strom-/Spannungswandler. Den Strom/Spannungswandler befreie ich von den Schraubklemmen (auslöten) und ersetze die durch Stiftleisten - einfacher Tausch. Dazu bekommt die Platine je Gegenstück Buchsenleiste 2 polig und 3 polig mit 5er Raster.
+Nach dem Zusammenbau, der Bestückung der Platine erfolgt schrittweise die Inbetriebnahme - noch ohne Arduino und ohne den Strom/Spannungswandler. Buchsenleisten sind nützlich für den Arduino (quasi ein muss) und für den Strom-/Spannungswandler. Den Strom/Spannungswandler befreie ich von den Schraubklemmen (auslöten) und ersetze die durch Stiftleisten - einfacher Tausch. Dazu bekommt die Platine je Gegenstück eine Buchsenleiste 2 polig und 3 polig mit 5er Raster.
 
 1. Prüfung der Spannungen
    An Pin 3 des Strom/Spannungswandlers müssen 24V anliegen (auf dem Board rechte Buchsenleiste oberer Pin/Buchse)
+   Am Schraubklemmenblock für die Sonde müssen 24V anliegen
    Am Pin 3 der Stiftleiste für den Arduino müssen gegenüber GND (Pin 4) 3,3Volt anliegen
-2. Einstellen des Strom/Spannungswandlers (idealerweise bei voller Zisterne)
-   Zum Einstellen des Stromspannungswandlers wird an der Stiftleiste "Probe" ein Multimeter zur Spannungsmessung angeschlossen. Ohne Sonde liefert das Multimeter dann 0V. Dann wird die Sonde angeschlossen und noch nicht in die Zisterne herabgelassen - Nullpunkteinstellung für "leer". Mit dem linken Poti dreht man jetzt solange nach linke (kleiner) oder nach rechtes (größer), bis die gemessene Spannung verlässlich nah an 0V liegt aber eben noch größer als 0V ist. Jetzt kann die Sonde in die Zisterne gelassen werden - so tief, wie möglich. Zur korrekten Kalibrierung des Maximalwertes ist es am einfachsten den maximalen Füllstand auch zur EInstellung der maximalen Spannung zu nutzen. Dazu dreht man jetzt am rechten Poti des Wandlers (links kleiner, rechts größer) bis die gemessene Spannung nah bei 3,3V ist. Es empfiehlt sich etwas "Luft" zu lassen. Wenn die Zisterne nicht voll ist, sollte man abschätzen können, wie voll (in Prozent) sie ist, man kann dann ausgehend vom Zielwert bei "Zisterne Voll" nah bei 3,3V und dem unteren Messwert für leer den Spannungswert, den man jetzt messen möchte im Dreisatz ableiten.
-4. Anpassen der Grundeinstellungen in der Software
+3. Einstellen des Strom/Spannungswandlers (idealerweise bei voller Zisterne)
+   Zum Einstellen des Stromspannungswandlers wird selbiger in die Buchsenleisten gesteckt. Ebenso wird an der Stiftleiste "Probe" ein Multimeter zur Spannungsmessung angeschlossen. Ohne Sonde liefert das Multimeter dann 0V. Dann wird die Sonde angeschlossen und noch nicht in die Zisterne herabgelasse. Es erfolgt die Nullpunkteinstellung für "leer". Mit dem linken Poti dreht man jetzt solange nach links (kleiner) oder nach rechts (größer), bis die gemessene Spannung verlässlich nah an 0V liegt aber eben noch größer als 0V ist. Jetzt kann die Sonde in die Zisterne gelassen werden - so tief wie möglich. Zur korrekten Kalibrierung des Maximalwertes ist es am einfachsten den maximalen Füllstand auch zur Einstellung der maximalen Spannung zu nutzen. Dazu dreht man jetzt am rechten Poti des Wandlers (links kleiner, rechts größer) bis die gemessene Spannung nah bei 3,3V ist. Es empfiehlt sich etwas "Luft" zu lassen. Wenn die Zisterne nicht voll ist, sollte man abschätzen können, wie voll (in Prozent) sie ist, man kann dann ausgehend vom Zielwert bei "Zisterne Voll" nah bei 3,3V und dem unteren Messwert für leer den Spannungswert, den man jetzt messen möchte im Dreisatz ableiten.
+4. Anpassen der Grundeinstellungen in der Software, dazu muss aus den gemessenen Werten (Volt) auf die nährungsweise korrekten digitalen Werte an den Analogen Eingängen geschlossen werden -> Dreisatz 0V -> Wert an A0 = 0, Bei z.B. Maximum 3V wäre der Analoge Wert für "Voll" 1024/3,3V * 3V = 930
 5. Aufspielen der Software auf den Arduino
 6. Board stromlos machen / Spannungsversorgung trennen
 7. Aufstecken des Arduino und des Ethernet-Shields auf die Buchsenleisten 14 polig
 8. Verbinden des Displays mit dem Controller
 9. Netzteil anschließen
 10. Der Arduino bootet und auf dem Display werden die Daten angezeigt
-11. Die Daten werden zyklisch an den MQTT-Broker verteilt.
+11. Die Daten werden zyklisch an den MQTT-Broker verteilt (Bei Änderungen sekündlich, ansonsten alle 30 Sekunden)
 12. Prüfung der Messwerte am Broker
 13. Es empfiehlt sich, dass nach ein paar Wochen Betrieb und Leer, Voll-Zyklen nochmal die Messwerte der Kalibrierung geprüft werden und notfalls nochmal in der Software neu eingestellt werden - entweder per MQTT oder "hart" per Software
 
