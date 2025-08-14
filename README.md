@@ -23,7 +23,7 @@ Hardware:
   - Spannungswandler [TSR-1 2433 (Wandlung Eingangsspannung 24V auf 3,3V](https://www.conrad.de/de/p/tracopower-tsr-1-2433-dc-dc-wandler-print-24-v-dc-3-3-v-dc-1-a-75-w-anzahl-ausgaenge-1-x-inhalt-1-st-156671.html) zur Versorgung der Schaltung mit 3,3V
   - Strom/Spannungswandler zur Wandlung des Stroms der Sonde in Spannung inkl. Kalibrierung von 0-Punkt und Max (Ali - Express: Strom-Spannungs-Modul 0-20 mA/4-20 mA bis 0-3,3 V/0 -5V/0 -10V Spannungssender-Signal wandler modul)
   
-  - Relais [36.11 Schaltspannung 3V](https://www.conrad.de/de/p/finder-36-11-9-003-4011-printrelais-3-v-dc-10-a-1-wechsler-1-st-3323202.html)
+  - [Relais Finder 36.11][36.11 Schaltspannung 3V](https://www.conrad.de/de/p/finder-36-11-9-003-4011-printrelais-3-v-dc-10-a-1-wechsler-1-st-3323202.html)
   - Steckerleisten 14 polig
   - Transistor BC337 (Schaltung Relais und LED
   - Diode (1N 4148)
@@ -32,8 +32,7 @@ Hardware:
   - LED - Rot, 3mm
   
   Display
-  - 2,42" 128X64-OLED-Anzeigemodul SPI - 2.42 Zoll OLED Bildschirm kompatibel mit Arduino UNO R3 - Weiße Schrift OLED :
-  (https://www.az-delivery.de/products/oled-2-4-white?variant=44762703986955&utm_source=google&utm_medium=cpc&utm_campaign=16964979024&utm_content=166733588295&utm_term=&gad_source=1&gbraid=0AAAAADBFYGXj7s2C_h3TASz0DupxomgUw&gclid=EAIaIQobChMI-YCAy9LmjAMVH5CDBx0H8zKnEAQYAyABEgLpafD_BwE)
+  - [2,42" 128X64-OLED-Anzeigemodul SPI - 2.42 Zoll OLED Bildschirm kompatibel mit Arduino UNO R3 - Weiße Schrift OLED :](https://www.az-delivery.de/products/oled-2-4-white?variant=44762703986955&utm_source=google&utm_medium=cpc&utm_campaign=16964979024&utm_content=166733588295&utm_term=&gad_source=1&gbraid=0AAAAADBFYGXj7s2C_h3TASz0DupxomgUw&gclid=EAIaIQobChMI-YCAy9LmjAMVH5CDBx0H8zKnEAQYAyABEgLpafD_BwE)
   
   Schraubklemmblöcke zum Anschluss von 
   - 3 x [2 polig](https://www.conrad.de/de/p/deca-1216197-schraubklemmblock-1-50-mm-polzahl-3-blau-1-st-1216197.html) (Sonde Zisterne, Spannungsversorgung 24V, Stromsensor SCT 013)
@@ -44,6 +43,7 @@ Hardware:
   2 x [Wannenstecker 8polig](https://www.conrad.de/de/p/bkl-electronic-10120552-stiftleiste-ohne-auswurfhebel-rastermass-2-54-mm-polzahl-gesamt-8-anzahl-reihen-2-1-st-741552.html?hk=SEM&WT.mc_id=google_pla&utm_source=google&utm_medium=cpc&utm_campaign=DE+-+PMAX+-+Nonbrand+-+Learning&utm_id=20402606569&gad_source=1&gad_campaignid=20392975386&gbraid=0AAAAAD1-3H7MMs8aUj1DVyRg7EW9yTu3l&gclid=CjwKCAjwkvbEBhApEiwAKUz6--gW1qskdMad7NtT7sFPgiCQdok8dU4I2qlc02XzfEHAeNsRRdUxyhoCCR4QAvD_BwE)
   
   2 x [Pfostensteckverbinder mit Zugentlastung](https://www.conrad.de/de/p/tru-components-1580952-pfosten-steckverbinder-mit-zugentlastung-rastermass-2-54-mm-polzahl-gesamt-8-anzahl-reihen-2-1-1580952.html?hk=SEM&WT.mc_id=google_pla&utm_source=google&utm_medium=cpc&utm_campaign=DE+-+PMAX+-+Nonbrand+-+Learning&utm_id=20402606569&gad_source=1&gad_campaignid=20392975386&gbraid=0AAAAAD1-3H7MMs8aUj1DVyRg7EW9yTu3l&gclid=CjwKCAjwkvbEBhApEiwAKUz6--gW1qskdMad7NtT7sFPgiCQdok8dU4I2qlc02XzfEHAeNsRRdUxyhoCCR4QAvD_BwE)
+  
   1 x [Flachbandkabel 8 polig](https://www.conrad.de/de/p/econ-connect-28awg8gr-flachbandkabel-rastermass-1-27-mm-8-x-0-08-mm-grau-30-50-m-1656444.html)
   
   
