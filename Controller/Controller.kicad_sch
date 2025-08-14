@@ -4,6 +4,11 @@
 	(generator_version "9.0")
 	(uuid "bc65ad1a-48cb-4693-9eab-33a13bb66b0b")
 	(paper "A4")
+	(title_block
+		(title "Controller RainControl")
+		(date "2025-08-14")
+		(rev "0.9")
+	)
 	(lib_symbols
 		(symbol "Connector:Conn_01x02_Pin"
 			(pin_names
