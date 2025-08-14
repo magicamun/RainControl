@@ -27,13 +27,9 @@ Hardware:
   - Steckerleisten 14 polig
   - Transistor BC337 (Schaltung Relais und LED
   - Diode (1N 4148)
-  - Widerstände
-  -   2x 10k
-  -   2x 330 Ohm
-  Elko:
-  - 10uF
-  LED:
-  - Rot, 3mm
+  - Widerstände (2x 10k, 2x 330 Ohm)
+  - 10uF Elko
+  - LED - Rot, 3mm
   
   Display
   - 2,42" 128X64-OLED-Anzeigemodul SPI - 2.42 Zoll OLED Bildschirm kompatibel mit Arduino UNO R3 - Weiße Schrift OLED :
@@ -45,8 +41,8 @@ Hardware:
   
   Zur Verbindung von Controllerplatine mit der Displayplatine:
   
-  2 x Wannenstecker 8polig
-  2 x Buchsenstecker 8 polig 
+  2 x Wannenstecker [8polig](https://www.conrad.de/de/p/bkl-electronic-10120552-stiftleiste-ohne-auswurfhebel-rastermass-2-54-mm-polzahl-gesamt-8-anzahl-reihen-2-1-st-741552.html?hk=SEM&WT.mc_id=google_pla&utm_source=google&utm_medium=cpc&utm_campaign=DE+-+PMAX+-+Nonbrand+-+Learning&utm_id=20402606569&gad_source=1&gad_campaignid=20392975386&gbraid=0AAAAAD1-3H7MMs8aUj1DVyRg7EW9yTu3l&gclid=CjwKCAjwkvbEBhApEiwAKUz6--gW1qskdMad7NtT7sFPgiCQdok8dU4I2qlc02XzfEHAeNsRRdUxyhoCCR4QAvD_BwE)
+  2 x Pfostensteckverbinder mit Zugentlastung https://www.conrad.de/de/p/tru-components-1580952-pfosten-steckverbinder-mit-zugentlastung-rastermass-2-54-mm-polzahl-gesamt-8-anzahl-reihen-2-1-1580952.html?hk=SEM&WT.mc_id=google_pla&utm_source=google&utm_medium=cpc&utm_campaign=DE+-+PMAX+-+Nonbrand+-+Learning&utm_id=20402606569&gad_source=1&gad_campaignid=20392975386&gbraid=0AAAAAD1-3H7MMs8aUj1DVyRg7EW9yTu3l&gclid=CjwKCAjwkvbEBhApEiwAKUz6--gW1qskdMad7NtT7sFPgiCQdok8dU4I2qlc02XzfEHAeNsRRdUxyhoCCR4QAvD_BwE
   1 x Flachbandkabel 8 polig
   
   
