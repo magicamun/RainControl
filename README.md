@@ -31,8 +31,9 @@ Bauteile für die Schaltung, Platine
   - [Steckerleisten 14 polig](https://www.conrad.de/de/p/econ-connect-buchsenleiste-standard-anzahl-reihen-1-polzahl-je-reihe-14-blg1x14-1-st-1492306.html)
   - [Transistor BC337](https://www.conrad.de/de/p/diotec-transistor-bjt-diskret-bc337-25-to-92-anzahl-kanaele-1-npn-155900.html) zur Schaltung von Relais und LED
   - [Diode (1N 4148)](https://www.conrad.de/de/p/diotec-ultraschnelle-si-diode-1n4148-sod-27-75-v-150-ma-162280.html)
-  - [2x Widerstand 330 Ohm](https://www.conrad.de/de/p/yageo-cfr25j330rh-cfr-25jt-52-330r-kohleschicht-widerstand-330-axial-bedrahtet-0207-0-25-w-5-1-st-1417730.html)
+  - [1x Widerstand 330 Ohm](https://www.conrad.de/de/p/yageo-cfr25j330rh-cfr-25jt-52-330r-kohleschicht-widerstand-330-axial-bedrahtet-0207-0-25-w-5-1-st-1417730.html)
   - [2x Widerstand 10k Ohm](https://www.conrad.de/de/p/yageo-cfr25j10kh-cfr-25jt-52-10k-kohleschicht-widerstand-10-k-axial-bedrahtet-0207-0-25-w-5-1-st-1417697.html)
+  - [1x Widerstand 390 Ohm](https://www.conrad.de/de/p/yageo-mf0207f390rh-mf0207fte52-390r-metallschicht-widerstand-390-axial-bedrahtet-0207-0-6-w-1-1-st-1417596.html)
   - [10uF Elko](https://www.conrad.de/de/p/frolyt-e-rf3058-elektrolyt-kondensator-radial-bedrahtet-2-5-mm-10-f-16-v-20-o-x-l-5-mm-x-12-mm-1-st-3046377.html)
   - LED - Rot, 3mm
   
