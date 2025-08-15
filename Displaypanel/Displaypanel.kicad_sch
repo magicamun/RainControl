@@ -4,6 +4,11 @@
 	(generator_version "9.0")
 	(uuid "29a59222-7e53-48d0-bb5c-bd4ba120a643")
 	(paper "A4")
+	(title_block
+		(title "DisplayPanel")
+		(date "2025-08-15")
+		(rev "0.9")
+	)
 	(lib_symbols
 		(symbol "Connector_Generic:Conn_02x05_Odd_Even"
 			(pin_names

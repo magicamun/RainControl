@@ -24,17 +24,20 @@ Hardware:
 
 Bauteile für die Schaltung, Platine
   
+  Controller
   - [Spannungswandler TSR-1 2433 (Wandlung Eingangsspannung 24V auf 3,3V](https://www.conrad.de/de/p/tracopower-tsr-1-2433-dc-dc-wandler-print-24-v-dc-3-3-v-dc-1-a-75-w-anzahl-ausgaenge-1-x-inhalt-1-st-156671.html) zur Versorgung der Schaltung mit 3,3V
   - [Strom/Spannungswandler](https://de.aliexpress.com/item/1005001604138590.html) zur Wandlung des Stroms der Sonde in Spannung inkl. Kalibrierung von 0-Punkt und Maximum
-  
   - [Relais Finder 36.11 Schaltspannung 3V](https://www.conrad.de/de/p/finder-36-11-9-003-4011-printrelais-3-v-dc-10-a-1-wechsler-1-st-3323202.html)
   - [Steckerleisten 14 polig](https://www.conrad.de/de/p/econ-connect-buchsenleiste-standard-anzahl-reihen-1-polzahl-je-reihe-14-blg1x14-1-st-1492306.html)
   - [Transistor BC337](https://www.conrad.de/de/p/diotec-transistor-bjt-diskret-bc337-25-to-92-anzahl-kanaele-1-npn-155900.html) zur Schaltung von Relais und LED
-  - [Diode (1N 4148)](https://www.conrad.de/de/p/diotec-ultraschnelle-si-diode-1n4148-sod-27-75-v-150-ma-162280.html)
-  - [1x Widerstand 330 Ohm](https://www.conrad.de/de/p/yageo-cfr25j330rh-cfr-25jt-52-330r-kohleschicht-widerstand-330-axial-bedrahtet-0207-0-25-w-5-1-st-1417730.html)
-  - [2x Widerstand 10k Ohm](https://www.conrad.de/de/p/yageo-cfr25j10kh-cfr-25jt-52-10k-kohleschicht-widerstand-10-k-axial-bedrahtet-0207-0-25-w-5-1-st-1417697.html)
-  - [1x Widerstand 390 Ohm](https://www.conrad.de/de/p/yageo-mf0207f390rh-mf0207fte52-390r-metallschicht-widerstand-390-axial-bedrahtet-0207-0-6-w-1-1-st-1417596.html)
+  - D1 [Diode (1N 4148)](https://www.conrad.de/de/p/diotec-ultraschnelle-si-diode-1n4148-sod-27-75-v-150-ma-162280.html)
+  - R1 [1x Widerstand 330 Ohm](https://www.conrad.de/de/p/yageo-cfr25j330rh-cfr-25jt-52-330r-kohleschicht-widerstand-330-axial-bedrahtet-0207-0-25-w-5-1-st-1417730.html)
+  - R2, R3 [2x Widerstand 10k Ohm](https://www.conrad.de/de/p/yageo-cfr25j10kh-cfr-25jt-52-10k-kohleschicht-widerstand-10-k-axial-bedrahtet-0207-0-25-w-5-1-st-1417697.html)
   - [10uF Elko](https://www.conrad.de/de/p/frolyt-e-rf3058-elektrolyt-kondensator-radial-bedrahtet-2-5-mm-10-f-16-v-20-o-x-l-5-mm-x-12-mm-1-st-3046377.html)
+
+  Displaypanel
+  - R1 [1x Widerstand 390 Ohm](https://www.conrad.de/de/p/yageo-mf0207f390rh-mf0207fte52-390r-metallschicht-widerstand-390-axial-bedrahtet-0207-0-6-w-1-1-st-1417596.html)
+
   - LED - Rot, 3mm
   
   Display
@@ -135,20 +138,41 @@ Per MQTT kann der Controller aber auch gesteuert werden:
 
 Bei eingelegter SD-Card werden die Daten über einen Reset hinaus auf der SD-Card gespeichert und nach Neustart gelesen, wenn man darauf verzichtet die Werte nach dem Aufspielen der Software und der Einstellung in der Software zu verändern ist eine SD-Card nicht nötig
 
-Im 
-Nach dem Zusammenbau, der Bestückung der Platine erfolgt schrittweise die Inbetriebnahme - noch ohne Arduino und ohne den Strom/Spannungswandler. Buchsenleisten sind nützlich für den Arduino (quasi ein muss) und für den Strom-/Spannungswandler. Den Strom/Spannungswandler befreie ich von den Schraubklemmen (auslöten) und ersetze die durch Stiftleisten - einfacher Tausch. Dazu bekommt die Platine je Gegenstück eine Buchsenleiste 2 polig und 3 polig mit 5er Raster.
+Aufbau, Inbetriebnahme
+1. Platinenlayout, Produktion der Platinen
+  Im Repository sind in den Unterordnern Controller und Displaypanel je ein KiCad-Projekt mit dem Schema und dem Platinenlayout - wer mag, kann damit andere Platinenformate erzeugen
+  oder aber die Schaltung anpassen.
+  Die zwei Zip-Archive im Hauptverzeichnis enthalten die Gerberdateien um PCB's produzieren zu lassen. [JLCPCB](https://jlcpcb.com) hat mir gute Dienste geleistet. Der Preis für jeweils 5 Stück (kleinste Einheit) Controler und 
+  Display liegt bei 13.50$US - zzgl Versand, Zoll ist man dann bei knapp 30$. Lieferzeit etwa 1 Woche (je nach Zollabfertigung und lokalem Shipment)
 
-1. Prüfung der Spannungen
+2. Aufbau der Platine
+  Die Platinen mit den Bauteilen bestücken. Dabei mit den flachen anfangen (Widerstände, Diode, Transistor), dann Buchsenleisten, Schraubklemmenblöcke, Relais, Spannungswandler
+
+  Nach dem Zusammenbau, der Bestückung der Platine erfolgt schrittweise die Inbetriebnahme - noch ohne Arduino und ohne den Strom/Spannungswandler.
+  Buchsenleisten sind nützlich für den Arduino (quasi ein muss) und für den Strom-/Spannungswandler. 
+  Den Strom/Spannungswandler befreie ich von den Schraubklemmen (auslöten) und ersetze die durch Stiftleisten - einfacher Tausch.
+  Dazu bekommt die Platine je Gegenstück eine Buchsenleiste 2 polig und 3 polig mit 5er Raster.
+
+3. Prüfung der Spannungen
    An Pin 3 des Strom/Spannungswandlers müssen 24V anliegen (auf dem Board rechte Buchsenleiste oberer Pin/Buchse)
    Am Schraubklemmenblock für die Sonde müssen 24V anliegen
    Am Pin 3 der Stiftleiste für den Arduino müssen gegenüber GND (Pin 4) 3,3Volt anliegen
+
 3. Einstellen des Strom/Spannungswandlers (idealerweise bei voller Zisterne)
-   Zum Einstellen des Stromspannungswandlers wird selbiger in die Buchsenleisten gesteckt. Ebenso wird an der Stiftleiste "Probe" ein Multimeter zur Spannungsmessung angeschlossen. Ohne Sonde liefert das Multimeter dann 0V. Dann wird die Sonde angeschlossen und noch nicht in die Zisterne herabgelasse. Es erfolgt die Nullpunkteinstellung für "leer". Mit dem linken Poti dreht man jetzt solange nach links (kleiner) oder nach rechts (größer), bis die gemessene Spannung verlässlich nah an 0V liegt aber eben noch größer als 0V ist. Jetzt kann die Sonde in die Zisterne gelassen werden - so tief wie möglich. Zur korrekten Kalibrierung des Maximalwertes ist es am einfachsten den maximalen Füllstand auch zur Einstellung der maximalen Spannung zu nutzen. Dazu dreht man jetzt am rechten Poti des Wandlers (links kleiner, rechts größer) bis die gemessene Spannung nah bei 3,3V ist. Es empfiehlt sich etwas "Luft" zu lassen. Wenn die Zisterne nicht voll ist, sollte man abschätzen können, wie voll (in Prozent) sie ist, man kann dann ausgehend vom Zielwert bei "Zisterne Voll" nah bei 3,3V und dem unteren Messwert für leer den Spannungswert, den man jetzt messen möchte im Dreisatz ableiten.
-4. Anpassen der Grundeinstellungen in der Software, dazu muss aus den gemessenen Werten (Volt) auf die nährungsweise korrekten digitalen Werte an den Analogen Eingängen geschlossen werden -> Dreisatz 0V -> Wert an A0 = 0, Bei z.B. Maximum 3V wäre der Analoge Wert für "Voll" 1024/3,3V * 3V = 930
+   Zum Einstellen des Stromspannungswandlers wird selbiger in die Buchsenleisten gesteckt. Ebenso wird an der Stiftleiste "Probe" ein Multimeter zur Spannungsmessung angeschlossen.
+   Ohne Sonde liefert das Multimeter dann 0V. Dann wird die Sonde angeschlossen und noch nicht in die Zisterne herabgelasse. Es erfolgt die Nullpunkteinstellung für "leer".
+   Mit dem linken Poti dreht man jetzt solange nach links (kleiner) oder nach rechts (größer), bis die gemessene Spannung verlässlich nah an 0V liegt aber eben noch größer als 0V ist.
+   Jetzt kann die Sonde in die Zisterne gelassen werden - so tief wie möglich. Zur korrekten Kalibrierung des Maximalwertes ist es am einfachsten den maximalen Füllstand auch zur Einstellung
+   der maximalen Spannung zu nutzen. Dazu dreht man jetzt am rechten Poti des Wandlers (links kleiner, rechts größer) bis die gemessene Spannung nah bei 3,3V ist. Es empfiehlt sich etwas "Luft" zu lassen.
+   Wenn die Zisterne nicht voll ist, sollte man abschätzen können, wie voll (in Prozent) sie ist, man kann dann ausgehend vom Zielwert bei "Zisterne Voll" nah bei 3,3V und
+   dem unteren Messwert für "leer" den Spannungswert, den man jetzt messen möchte im Dreisatz ableiten und dann einstellen am Poti.
+
+4. Die ermittelten (analogen Spannungs-)werte müssen/sollten in der Software vor dem Aufspielen auf den Arduino eingestellt werden. (Defines im Sketch).
+   Dazu muss aus den gemessenen Werten (Volt) auf die nährungsweise korrekten digitalen Werte an den Analogen Eingängen geschlossen werden -> Dreisatz 0V -> Wert an A0 = 0, Bei z.B. Maximum 3V wäre der Analoge Wert für "Voll" 1024/3,3V * 3V = 930
 5. Aufspielen der Software auf den Arduino
 6. Board stromlos machen / Spannungsversorgung trennen
 7. Aufstecken des Arduino und des Ethernet-Shields auf die Buchsenleisten 14 polig
-8. Verbinden des Displays mit dem Controller
+8. Verbinden des Displays mit dem Controller (Wenn das Display NICHT angeschlossen ist, dann wird der Arduino NICHTS tun.)
 9. Netzteil anschließen
 10. Der Arduino bootet und auf dem Display werden die Daten angezeigt
 11. Die Daten werden zyklisch an den MQTT-Broker verteilt (Bei Änderungen sekündlich, ansonsten alle 30 Sekunden)
