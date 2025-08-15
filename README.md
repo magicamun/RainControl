@@ -135,6 +135,7 @@ Per MQTT kann der Controller aber auch gesteuert werden:
 
 Bei eingelegter SD-Card werden die Daten über einen Reset hinaus auf der SD-Card gespeichert und nach Neustart gelesen, wenn man darauf verzichtet die Werte nach dem Aufspielen der Software und der Einstellung in der Software zu verändern ist eine SD-Card nicht nötig
 
+Im 
 Nach dem Zusammenbau, der Bestückung der Platine erfolgt schrittweise die Inbetriebnahme - noch ohne Arduino und ohne den Strom/Spannungswandler. Buchsenleisten sind nützlich für den Arduino (quasi ein muss) und für den Strom-/Spannungswandler. Den Strom/Spannungswandler befreie ich von den Schraubklemmen (auslöten) und ersetze die durch Stiftleisten - einfacher Tausch. Dazu bekommt die Platine je Gegenstück eine Buchsenleiste 2 polig und 3 polig mit 5er Raster.
 
 1. Prüfung der Spannungen
