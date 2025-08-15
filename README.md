@@ -98,34 +98,35 @@ Mit dem an RST angeschlossenen Taster lässt sich der Controller resetten.
 Ventilsteuerung generell:
 Der Controller misst den Füllstand und (kann) in Abhängigkeit davon einen Schwimmerschalter für handelsübliche Zisternenpumpen ersetzen. Dazu ist die Steuerung der Pumpe auf "Automatik" zu stellen
 und statt des Schwimmerschalters ein 230V - Kabel vom Anschluss des Schwimmerschalters zum Controller (3 - polige Klemme) zu führen.
-Am Schraubklemmenblock 3 polig ist in jedem der mittlere Anschluss zu belegen und dann entweder NO (Normally open) oder NC (normally connected) - auf keinen Fall NO UND NC -> das führt zum Kurzschluss.
+Am Schraubklemmenblock 3 polig ist in jedem der mittlere Anschluss zu belegen und dann entweder NO (Normally open) oder NC (normally connected) - sonst schaltet am Ventil der Regenwasserpump nichts.
 
 Funktionsweise Software:
 
-Sämtliche Systemzustände werden bei Veränderung alle Sekunde an einen MQTT-Broker gesendet, spätestens alle 30 Sekunden. Das System führt folgende Werte:
+Sämtliche Systemzustände werden bei Veränderung alle Sekunde an einen MQTT-Broker gesendet, spätestens alle 30 Sekunden auch unverändert. Das System führt folgende Werte:
 
+- Booted     -> Boot-Zeitpunkt
 - Timestamp  (Datum, Uhrzeit)
+- Uptime     -> Zeit seit l. Boot/Neustart
 - Mode       (0 = Zisterne, 1 = Hauswasser, 2 = Auto) -> Betriebsmodus
+- Modus      -> Modus als Text
 - Valve      (0 = Zisterne, 1 = Hauswasser) -> Ventilstellung
+- Ventil     -> Ventilstellung als Text ("Zisterne", "Hauswasser")
+- Reason     -> Grund für Ventilstellung (0 = "Manuell", 1 = "Zisterne voll", 2 = "Zisterne leer")
+- Reasontext -> Reason als Text
+- AnalogMin  -> mindestwert, den die Sonde liefern muss, damit Sonde als vorhanden erkannt wird
+- AnalogMax  -> Maximaler analoger Wert an A0 für volle Zisterne
 - Analog     (0-1023) -> Analoger Messwert der Pegelsonde (0-1023)
 - Liter      -> Füllung in Liter
+- Prozent    -> Füllstand in %
 - LimitLow   -> Unterer Schwellwert in Liter
 - LimitHigh  -> Oberer Schwellwert in Liter
 - LiterMax   -> maximales Füllvolumen wird benötigt zur Umrechnung des analogen Wertes in Liter (Analog = LiterMax / AnalogMax)
-- Prozent    -> Füllstand in %
-- Uptime     -> Zeit seit l. Boot/Neustart
 - StatusSonde-> Ist eine Sonde korrekt angeschlosen (Wenn der Analoge Wert unter einem Minimum liegt, dann ist davon auszugehen, dass die Sonde nicht korrekt angeschlossen ist
-- Ventil     -> Ventilstellung als Text ("Zisterne", "Hauswasser")
-- Modus      -> Modus als Text
 - HyaRain    -> Pumpe läuft (ON), oder nicht (OFF)
-- Booted     -> Boot-Zeitpunkt
-- AnalogMin  -> mindestwert, den die Sonde liefern muss, damit Sonde als vorhanden erkannt wird
-- AnalogMax  -> Maximaler analoger Wert an A0 für volle Zisterne
 - Current    -> Stromverbrauch in Ampere
 - Power      -> Watt (Volt * Leistung pro Sekunde
 - KWh        -> KLilowattstunden
-- Reason     -> Grund für Ventilstellung (0 = "Manuell", 1 = "Zisterne voll", 2 = "Zisterne leer")
-- Reasontext -> Reason als Text
+
 
 Per MQTT kann der Controller aber auch gesteuert werden:
  - cmd/Mode [0,1,2] -> Es kann der Modus umgestellt werden (nicht nur per Taster)
