@@ -19,7 +19,6 @@ Hardware:
   
   [Stromsensor SCT013 - 5A, 1V](https://www.amazon.de/HUABAN-Nicht-invasiver-Split-Core-Stromwandlersensor/dp/B089FNQ5GX?th=1)
 
-  
   [Steckernetzteil 24V DC](https://www.conrad.de/de/p/dehner-elektronik-saw-30-240-1000g-steckernetzteil-festspannung-24-v-dc-1000-ma-24-w-1549855.html?hk=SEM&WT.mc_id=google_pla&hk=SEM&utm_source=google&utm_medium=cpc&utm_campaign=DE+-+PMAX+-+NonBrand+-+HighSeller&utm_id=21937516534&gad_source=1&gad_campaignid=21927121650&gbraid=0AAAAAD1-3H55teHckZVhYkIPfFdxDBIyw&gclid=CjwKCAjwkvbEBhApEiwAKUz6-_WoWozN2cLwMMVPz-lnBLRVL9TKFUfYD33zZuLYZoKtDEOT-MbmOBoC1GUQAvD_BwE)
 
 Bauteile für die Schaltung, Platine
@@ -34,19 +33,17 @@ Bauteile für die Schaltung, Platine
   - R1 [1x Widerstand 330 Ohm](https://www.conrad.de/de/p/yageo-cfr25j330rh-cfr-25jt-52-330r-kohleschicht-widerstand-330-axial-bedrahtet-0207-0-25-w-5-1-st-1417730.html)
   - R2, R3 [2x Widerstand 10k Ohm](https://www.conrad.de/de/p/yageo-cfr25j10kh-cfr-25jt-52-10k-kohleschicht-widerstand-10-k-axial-bedrahtet-0207-0-25-w-5-1-st-1417697.html)
   - [10uF Elko](https://www.conrad.de/de/p/frolyt-e-rf3058-elektrolyt-kondensator-radial-bedrahtet-2-5-mm-10-f-16-v-20-o-x-l-5-mm-x-12-mm-1-st-3046377.html)
-
+  - 3 x [Schraubklemmblock 2 polig](https://www.conrad.de/de/p/deca-1216197-schraubklemmblock-1-50-mm-polzahl-3-blau-1-st-1216197.html) (Sonde Zisterne, Spannungsversorgung 24V, Stromsensor SCT 013)
+  - 1 x [Schraubklemmblock 3-polig](https://www.conrad.de/de/p/deca-1282826-schraubklemmblock-1-50-mm-polzahl-2-blau-1-st-1282826.html) (Umschaltung Regenwasserpumpe, Übersteuerung Schwimmerschaltung - ACHTUNG - 230V)
+  
   Displaypanel
   - R1 [1x Widerstand 390 Ohm](https://www.conrad.de/de/p/yageo-mf0207f390rh-mf0207fte52-390r-metallschicht-widerstand-390-axial-bedrahtet-0207-0-6-w-1-1-st-1417596.html)
-
   - LED - Rot, 3mm
   
   Display
   - [2,42" 128X64-OLED-Anzeigemodul SPI - 2.42 Zoll OLED Bildschirm kompatibel mit Arduino UNO R3 - Weiße Schrift OLED :](https://www.az-delivery.de/products/oled-2-4-white?variant=44762703986955&utm_source=google&utm_medium=cpc&utm_campaign=16964979024&utm_content=166733588295&utm_term=&gad_source=1&gbraid=0AAAAADBFYGXj7s2C_h3TASz0DupxomgUw&gclid=EAIaIQobChMI-YCAy9LmjAMVH5CDBx0H8zKnEAQYAyABEgLpafD_BwE)
   
 
-  - 3 x [Schraubklemmblock 2 polig](https://www.conrad.de/de/p/deca-1216197-schraubklemmblock-1-50-mm-polzahl-3-blau-1-st-1216197.html) (Sonde Zisterne, Spannungsversorgung 24V, Stromsensor SCT 013)
-  - 1 x [Schraubklemmblock 3-polig](https://www.conrad.de/de/p/deca-1282826-schraubklemmblock-1-50-mm-polzahl-2-blau-1-st-1282826.html) (Umschaltung Regenwasserpumpe, Übersteuerung Schwimmerschaltung - ACHTUNG - 230V)
-  
   Zur Verbindung von Controllerplatine mit der Displayplatine:
   
   2 x [Wannenstecker 8polig](https://www.conrad.de/de/p/bkl-electronic-10120552-stiftleiste-ohne-auswurfhebel-rastermass-2-54-mm-polzahl-gesamt-8-anzahl-reihen-2-1-st-741552.html?hk=SEM&WT.mc_id=google_pla&utm_source=google&utm_medium=cpc&utm_campaign=DE+-+PMAX+-+Nonbrand+-+Learning&utm_id=20402606569&gad_source=1&gad_campaignid=20392975386&gbraid=0AAAAAD1-3H7MMs8aUj1DVyRg7EW9yTu3l&gclid=CjwKCAjwkvbEBhApEiwAKUz6--gW1qskdMad7NtT7sFPgiCQdok8dU4I2qlc02XzfEHAeNsRRdUxyhoCCR4QAvD_BwE)
@@ -56,7 +53,7 @@ Bauteile für die Schaltung, Platine
   1 x [Flachbandkabel 8 polig](https://www.conrad.de/de/p/econ-connect-28awg8gr-flachbandkabel-rastermass-1-27-mm-8-x-0-08-mm-grau-30-50-m-1656444.html)
   
   
-Platinenlyout mittels KiCad - 2 Projekte - eines für das Display, eines für den Controller.
+Platinenlyout wurde mit KiCad in 2 Projekten erstellt - eines für das Display, eines für den Controller.
 
 Funktionsweise technisch:
 

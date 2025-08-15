@@ -7,7 +7,7 @@
 #define VERSION "RainControl V0.9a"
 
 // For Debugging with no Ethernet and no Display connecte, comment out for real-world
-#define DEBUG 1
+// #define DEBUG 1
 
 // ##############################################################################################################################
 // ---- HIER die Initialen Einstellungen vornehmen, die Werte sind über MQTT anpassbar
@@ -23,10 +23,10 @@
 // const int analog_max = 972;
 // const int analog_min = 50;
 // Maxwerte ohne Deckelung bei 100%
-#define ANALOG_MIN 50
-#define ANALOG_MAX 774
-#define LIMIT_LOW 500
-#define LIMIT_HIGH 1000
+#define ANALOG_MIN 50       // Analoger Messwert A0 (alles was kleiner ist, wird als "Sonde defekt oder nicht angeschlossen" gewertet)
+#define ANALOG_MAX 774      // Analoger Messwert A0 (bei 100% Füllgrad)
+#define LIMIT_LOW 500       // Liter
+#define LIMIT_HIGH 1000     // Liter
 
 // Dichte der Flüssigkeit - Bei Heizöl bitte "1.086" eintragen, aber nur wenn die Kalibrierung mit Wasser erfolgt ist!
 // Bei Kalibrierung mit Wasser bitte "1.0" eintragen
@@ -40,8 +40,6 @@ const float dichte = 1.0;
 bool setmode = false;
 char *modes[] = {"Zisterne", "Hauswasser", "Auto"};
 int mode_count = MODE_COUNT;
-int mode = MODE_AUTO;
-char *modus = modes[mode];
 
 int old_mode = MODE_AUTO;
 int pin_stat;
@@ -62,11 +60,9 @@ char *hyaraintext[] = {"Off", "On", "Failure", "Invalid"};
 unsigned long pubMillis;        // MQTT - Refresh
 unsigned long updateMillis;     
 #define SEKUNDE 1000  // one second
-#define HSEKUNDE 500  // half second
 
 unsigned long pinMillis;
 unsigned long lastMillis = 0;
-boolean publish = false;
 
 char uptime[20];
 char *up = &uptime[0];
@@ -496,11 +492,9 @@ void  MqttSetLimit(char *payload) {
         if (strcmp(key, "low") == 0) {
             LimitLow = sddata.limitLow = max(atoi(value), 0);
             SDWriteSettings();
-            publish = true;
         } else if (strcmp(key, "high") == 0) {
             LimitHigh = sddata.limitHigh = min(atoi(value), sddata.literMax);
             SDWriteSettings();
-            publish = true;
         }
     }
 }
@@ -551,19 +545,15 @@ void  MqttSetCalibrate(char *payload) {
         if (strcmp(key, "analogmin") == 0) {
             AnalogMin = sddata.analogMin = max(atoi(value), 0);
             SDWriteSettings();
-            publish = true;
         } else if (strcmp(key, "analogmax") == 0) {
-            sddata.analogMax = min(atoi(value), 1023);
+            AnalogMax = sddata.analogMax = min(atoi(value), 1023);
             SDWriteSettings();
-            publish = true;
         } else if (strcmp(key, "litermax") == 0) {
-            sddata.literMax = atoi(value);
+            LiterMax = sddata.literMax = atoi(value);
             SDWriteSettings();
-            publish = true;
         } else if (strcmp(key, "factor") == 0) {
-            sddata.currentFactor = atof(value);
+            CurrentFactor = sddata.currentFactor = atof(value);
             SDWriteSettings();
-            publish = true;
         }
     }
 }
@@ -900,7 +890,6 @@ void loop() {
 
     pin_stat = digitalRead(MODE_PIN);
     pinMillis = millis();
-    publish = false;
     
     if (pin_stat == LOW) {
         if (pinMillis - lastMillis > 200) {
@@ -909,15 +898,15 @@ void loop() {
             mode_count = MODE_COUNT;
             if (!setmode) {
                 setmode = true;
-                old_mode = mode;
-                sprintf(buf, "Button: Enter Settings-Mode %d (%s)", mode, modes[mode]);
+                old_mode = Mode;
+                sprintf(buf, "Button: Enter Settings-Mode %d (%s)", Mode, Modus);
                 Serial.println(buf);
             } else {
                 Mode = Mode - 1;
                 if (Mode < 0) {
                     Mode = 2;
                 }
-                Modus = modus = modes[Mode];
+                Modus = modes[Mode];
                 sprintf(buf, "Button: Mode change to %d (%s)", Mode, Modus);
                 Serial.println(buf);
             }
@@ -982,14 +971,8 @@ void loop() {
         if (setmode) {
             mode_count--;
             if (mode_count <= 0) {
-                //sprintf(buf, "leaving Settings-Mode - change from %d to %d (%s)", old_mode, mode, modes[mode]);
-                //USE_SERIAL.println(buf);
-                if (old_mode != mode) {
-                    publish = true;
-                }
-                old_mode = mode;
+                old_mode = Mode;
                 setmode = false;
-                publish = true;
             }
         }
         if (!setmode) {
@@ -1017,7 +1000,6 @@ void loop() {
         * Wenn Ventil umzuschalten ist
         */
         if (new_valve != Valve) {
-            publish = true;
             Valve = new_valve;
             Ventil = valves[Valve];
             digitalWrite(VALVE_PIN, Valve);
