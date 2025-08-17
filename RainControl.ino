@@ -4,7 +4,7 @@
 #include <Time.h>
 
 /* ---------------------------- allgemeine Settings ----------------------------- */
-#define VERSION "RainControl V0.9a"
+#define VERSION "RainControl V1.0"
 
 // For Debugging with no Display connected, comment out for real-world
 #define HAS_DISPLAY
@@ -400,7 +400,7 @@ char *sdini_format = "%2s;%d;%d;%d;%d;%d;%d;%s;";
 
 /* ----------------------------- MQTT ---------------------------- */
 // MQTT definitions
-#define MQTT_ID "RainControll"
+#define MQTT_ID "RainControl"
 void MqttCallback(char *topic, byte *payload, unsigned int length);
 
 // IP Adresse und Port des MQTT Servers

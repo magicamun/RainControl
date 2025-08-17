@@ -63,7 +63,7 @@ Füllstand:
   Diese Spannung wird am A0 (AnalogInput 0) des Arduino erfasst und in einen Füllstand umgerechnet - der Füllstand (Volumen) ist proportional zum gemessenen Wert an A0. (Voraussetzung ist ein Behälter, dessen Füllstand (Volumen) sich linear proportional zum Druck verhält (Senkrechter Zylinder).
   
   Der Wandler für den Messwert an A0 muss vor Inbetriebnahme des Systems kalibiriert werden.
-  ACHTUNG: Die Kalibrierung muss ohne angeschlossenen Arduino erfolgen um Beschädigungen durch Überspannung am Eingang des Arduino zu vermeiden.
+  ACHTUNG: Die Kalibrierung muss im ersten Schritt grob ohne angeschlossenen Arduino erfolgen um Beschädigungen durch Überspannung am Eingang des Arduino zu vermeiden.
   -> Siehe Kalibrierung und Inbetriebnahme.
   
   In Abhängigkeit von der gemessenen Füllhöhe und zwei einzustellenden Werten (LimitLow, LimitHigh) schaltet der Arduino das Relais sowie eine LED über PIN D14 an oder aus.
@@ -156,25 +156,33 @@ Aufbau, Inbetriebnahme
    Am Pin 3 der Stiftleiste für den Arduino müssen gegenüber GND (Pin 4) 3,3Volt anliegen
 
 3. Einstellen des Strom/Spannungswandlers (idealerweise bei voller Zisterne)
-   Zum Einstellen des Stromspannungswandlers wird selbiger in die Buchsenleisten gesteckt. Ebenso wird an der Stiftleiste "Probe" ein Multimeter zur Spannungsmessung angeschlossen.
-   Ohne Sonde liefert das Multimeter dann 0V. Dann wird die Sonde angeschlossen und noch nicht in die Zisterne herabgelasse. Es erfolgt die Nullpunkteinstellung für "leer".
-   Mit dem linken Poti dreht man jetzt solange nach links (kleiner) oder nach rechts (größer), bis die gemessene Spannung verlässlich nah an 0V liegt aber eben noch größer als 0V ist.
-   Jetzt kann die Sonde in die Zisterne gelassen werden - so tief wie möglich. Zur korrekten Kalibrierung des Maximalwertes ist es am einfachsten den maximalen Füllstand auch zur Einstellung
-   der maximalen Spannung zu nutzen. Dazu dreht man jetzt am rechten Poti des Wandlers (links kleiner, rechts größer) bis die gemessene Spannung nah bei 3,3V ist. Es empfiehlt sich etwas "Luft" zu lassen.
+   Erster Durchgang des Einstellens OHNE Arduino
+      Zum Einstellen des Stromspannungswandlers wird selbiger in die Buchsenleisten gesteckt. Ebenso wird an der Stiftleiste "Probe" ein Multimeter zur Spannungsmessung angeschlossen.
+      Ohne Sonde liefert das Multimeter dann 0V. Dann wird die Sonde angeschlossen und noch nicht in die Zisterne herabgelasse. Es erfolgt die Nullpunkteinstellung für "leer".
+      Mit dem linken Poti dreht man jetzt solange nach links (kleiner) oder nach rechts (größer), bis die gemessene Spannung verlässlich nah an 0V liegt aber eben noch größer als 0V ist.
+      Jetzt kann die Sonde in die Zisterne gelassen werden - so tief wie möglich. Zur korrekten Kalibrierung des Maximalwertes ist es am einfachsten den maximalen Füllstand auch zur Einstellung
+      der maximalen Spannung zu nutzen. Dazu dreht man jetzt am rechten Poti des Wandlers (links kleiner, rechts größer) bis die gemessene Spannung nah bei 3,3V ist. Es empfiehlt sich etwas "Luft" zu lassen.
+   Zweiter Durchgang mit Arduino - die Werte sind verändert, die Vorgehensweise ist die gleiche
+      Wichtig ist jetzt, dass jetzt die Analogen Messwerte angeschaut werden.
+      Messwert 1 "Sonde angeschlossen, aber nicht unter Druck" -> Dies wird mit dem Poti links auf einen möglichst kleinen aber stabil kleinen Wert über Null eingestellt (bei mir 50).
+      Dieser Wert wird in der Software im #DEFINE ANALOG_MIN abgelegt.
+      Messwert 2 "Sonde angeschlossen und Maximaler Füllstand der Zisterne und Sonde am tiefsten Punkt (maximaler Druck)
+      Den Messwert stellen wir mit dem rechten Poti so ein, dass er möglichst groß ist (nah an 1023), aber noch etwas Luft ist, falls die Zisterne mal "übervoll" ist - Mehr Zulauf als Ablauf (kommt schonmal vor bei mir)
+      Den Wert dann in #DEFINE ANALOG_MAX ablegen.
+      Die Defines für LITER_MIN mit einem Wert für die Restmenge in der Zisterne bevor die Pumpe auf Störung laufen würde (bei mir sind dann noch 15cm in der Zisterne drin und damit rund 470 Liter.
+      LITER_MAX einstellen mit dem maximalen regulären Füllvolumen der Zisterne.
+
    Wenn die Zisterne nicht voll ist, sollte man abschätzen können, wie voll (in Prozent) sie ist, man kann dann ausgehend vom Zielwert bei "Zisterne Voll" nah bei 3,3V und
    dem unteren Messwert für "leer" den Spannungswert, den man jetzt messen möchte im Dreisatz ableiten und dann einstellen am Poti.
-
-4. Die ermittelten (analogen Spannungs-)werte müssen/sollten in der Software vor dem Aufspielen auf den Arduino eingestellt werden. (Defines im Sketch).
-   Dazu muss aus den gemessenen Werten (Volt) auf die nährungsweise korrekten digitalen Werte an den Analogen Eingängen geschlossen werden -> Dreisatz 0V -> Wert an A0 = 0, Bei z.B. Maximum 3V wäre der Analoge Wert für "Voll" 1024/3,3V * 3V = 930
-5. Aufspielen der Software auf den Arduino
-6. Board stromlos machen / Spannungsversorgung trennen
-7. Aufstecken des Arduino und des Ethernet-Shields auf die Buchsenleisten 14 polig
-8. Verbinden des Displays mit dem Controller (Wenn das Display NICHT angeschlossen ist, dann wird der Arduino NICHTS tun.)
-9. Netzteil anschließen
-10. Der Arduino bootet und auf dem Display werden die Daten angezeigt
-11. Die Daten werden zyklisch an den MQTT-Broker verteilt (Bei Änderungen sekündlich, ansonsten alle 30 Sekunden)
-12. Prüfung der Messwerte am Broker
-13. Es empfiehlt sich, dass nach ein paar Wochen Betrieb und Leer, Voll-Zyklen nochmal die Messwerte der Kalibrierung geprüft werden und notfalls nochmal in der Software neu eingestellt werden - entweder per MQTT oder "hart" per Software
+4. Aufspielen der Software auf den Arduino
+5. Board stromlos machen / Spannungsversorgung trennen
+6. Aufstecken des Arduino und des Ethernet-Shields auf die Buchsenleisten 14 polig
+7. Verbinden des Displays mit dem Controller (Wenn das Display NICHT angeschlossen ist, dann wird der Arduino NICHTS tun.)
+8. Netzteil anschließen
+9. Der Arduino bootet und auf dem Display werden die Daten angezeigt
+10. Die Daten werden zyklisch an den MQTT-Broker verteilt (Bei Änderungen sekündlich, ansonsten alle 30 Sekunden)
+11. Prüfung der Messwerte am Broker
+12. Es empfiehlt sich, dass nach ein paar Wochen Betrieb und Leer, Voll-Zyklen nochmal die Messwerte der Kalibrierung geprüft werden und notfalls nochmal in der Software neu eingestellt werden - entweder per MQTT oder "hart" per Software
 
 
 

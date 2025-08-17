@@ -7,7 +7,7 @@
 	(title_block
 		(title "Controller RainControl")
 		(date "2025-08-14")
-		(rev "0.9")
+		(rev "1.0")
 	)
 	(lib_symbols
 		(symbol "Connector:Conn_01x02_Pin"
