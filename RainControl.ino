@@ -28,10 +28,6 @@
 #define LIMIT_LOW 500       // Liter
 #define LIMIT_HIGH 1000     // Liter
 
-// Dichte der Flüssigkeit - Bei Heizöl bitte "1.086" eintragen, aber nur wenn die Kalibrierung mit Wasser erfolgt ist!
-// Bei Kalibrierung mit Wasser bitte "1.0" eintragen
-const float dichte = 1.0;
-
 #define MODE_PIN 13
 #define MODE_ZISTERNE 0
 #define MODE_HAUSWASSER 1
