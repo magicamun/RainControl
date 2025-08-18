@@ -113,13 +113,14 @@ Sämtliche Systemzustände werden bei Veränderung alle Sekunde an einen MQTT-Br
 - Ventil     -> Ventilstellung als Text ("Zisterne", "Hauswasser")
 - Reason     -> Grund für Ventilstellung (0 = "Manuell", 1 = "Zisterne voll", 2 = "Zisterne leer")
 - Reasontext -> Reason als Text
-- AnalogMin  -> mindestwert, den die Sonde liefern muss, damit Sonde als vorhanden erkannt wird
+- AnalogMin  -> Mindestwert, den die Sonde liefern muss, damit Sonde als vorhanden erkannt wird
 - AnalogMax  -> Maximaler analoger Wert an A0 für volle Zisterne
 - Analog     (0-1023) -> Analoger Messwert der Pegelsonde (0-1023)
 - Liter      -> Füllung in Liter
 - Prozent    -> Füllstand in %
 - LimitLow   -> Unterer Schwellwert in Liter
 - LimitHigh  -> Oberer Schwellwert in Liter
+- LiterMin   -> Restfüllstand bei "leer" - unterer Grenzwert -> AnalogMin.
 - LiterMax   -> maximales Füllvolumen wird benötigt zur Umrechnung des analogen Wertes in Liter (Analog = LiterMax / AnalogMax)
 - StatusSonde-> Ist eine Sonde korrekt angeschlosen (Wenn der Analoge Wert unter einem Minimum liegt, dann ist davon auszugehen, dass die Sonde nicht korrekt angeschlossen ist
 - HyaRain    -> Pumpe läuft (ON), oder nicht (OFF)
@@ -127,13 +128,19 @@ Sämtliche Systemzustände werden bei Veränderung alle Sekunde an einen MQTT-Br
 - Power      -> Watt (Volt * Leistung pro Sekunde
 - KWh        -> KLilowattstunden
 
+Es gilt:
+LiterMin <= LimitLow <= LimitHigh <= LiterMax
+Bei mir mit 6500l Zisterne und Restmenge von knapp 500l: 
+LiterMin = 500, LimitLow = 600, LimitHigh = 1000, LiterMax = 6500. Bei unterschreiten von 600l schaltet das Relais auf Hauswassernachspeisung,
+sobald wieder mehr als 1000l in der Zisterne sind, wird zurück auf Zisterne geschaltet.
 
 Per MQTT kann der Controller aber auch gesteuert werden:
- - cmd/Mode [0,1,2] -> Es kann der Modus umgestellt werden (nicht nur per Taster)
+ - cmd/Mode [0,1,2,Hauswasser,Zisterne,Auto] -> Es kann der Modus umgestellt werden (nicht nur per Taster)
  - cmd/Limit [low|high]=<Number> -> Einstellen der Schwellwerte 
- - cmd/Calibrate [analogmin|analogmax|litermax]=<number> -> Einstelen der Kalibrierung in der Software nach dem die Sonde und der Wandler kalibriert wurden
+ - cmd/Calibrate [analogmin|analogmax|litermax]=<number> -> Einstellen der Kalibrierung in der Software nach dem die Sonde und der Wandler kalibriert wurden
 
-Bei eingelegter SD-Card werden die Daten über einen Reset hinaus auf der SD-Card gespeichert und nach Neustart gelesen, wenn man darauf verzichtet die Werte nach dem Aufspielen der Software und der Einstellung in der Software zu verändern ist eine SD-Card nicht nötig
+Bei eingelegter SD-Card werden die Daten über einen Reset hinaus auf der SD-Card gespeichert und nach Neustart gelesen.
+Wenn man darauf verzichtet die Werte nach dem Aufspielen der Software und der Einstellung in der Software zu verändern ist eine SD-Card nicht nötig
 
 Aufbau, Inbetriebnahme
 1. Platinenlayout, Produktion der Platinen
