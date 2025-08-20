@@ -19,7 +19,7 @@ Hardware:
   
   [Stromsensor SCT013 - 5A, 1V](https://www.amazon.de/HUABAN-Nicht-invasiver-Split-Core-Stromwandlersensor/dp/B089FNQ5GX?th=1)
 
-  [Steckernetzteil 24V DC](https://www.conrad.de/de/p/dehner-elektronik-saw-30-240-1000g-steckernetzteil-festspannung-24-v-dc-1000-ma-24-w-1549855.html?hk=SEM&WT.mc_id=google_pla&hk=SEM&utm_source=google&utm_medium=cpc&utm_campaign=DE+-+PMAX+-+NonBrand+-+HighSeller&utm_id=21937516534&gad_source=1&gad_campaignid=21927121650&gbraid=0AAAAAD1-3H55teHckZVhYkIPfFdxDBIyw&gclid=CjwKCAjwkvbEBhApEiwAKUz6-_WoWozN2cLwMMVPz-lnBLRVL9TKFUfYD33zZuLYZoKtDEOT-MbmOBoC1GUQAvD_BwE)
+  [Steckernetzteil 24V DC](https://www.conrad.de/de/p/dehner-elektronik-saw-30-240-1000g-steckernetzteil-festspannung-24-v-dc-1000-ma-24-w-1549855.html)
 
 Bauteile für die Schaltung, Platine
   
@@ -51,8 +51,12 @@ Bauteile für die Schaltung, Platine
   2 x [Pfostensteckverbinder mit Zugentlastung](https://www.conrad.de/de/p/tru-components-1580952-pfosten-steckverbinder-mit-zugentlastung-rastermass-2-54-mm-polzahl-gesamt-8-anzahl-reihen-2-1-1580952.html?hk=SEM&WT.mc_id=google_pla&utm_source=google&utm_medium=cpc&utm_campaign=DE+-+PMAX+-+Nonbrand+-+Learning&utm_id=20402606569&gad_source=1&gad_campaignid=20392975386&gbraid=0AAAAAD1-3H7MMs8aUj1DVyRg7EW9yTu3l&gclid=CjwKCAjwkvbEBhApEiwAKUz6--gW1qskdMad7NtT7sFPgiCQdok8dU4I2qlc02XzfEHAeNsRRdUxyhoCCR4QAvD_BwE)
   
   1 x [Flachbandkabel 8 polig](https://www.conrad.de/de/p/econ-connect-28awg8gr-flachbandkabel-rastermass-1-27-mm-8-x-0-08-mm-grau-30-50-m-1656444.html)
-  
-  
+
+  Sonstiges Material:
+  - Bopla Gehäuse](https://www.conrad.de/de/p/bopla-euromas-m-231-02231000-industrie-gehaeuse-160-x-80-x-85-polycarbonat-lichtgrau-ral-7035-1-st-531785.html?hk=SEM&WT.mc_id=google_pla&utm_source=google&utm_medium=cpc&utm_campaign=DE+-+PMAX+-+Nonbrand+-+Learning&utm_id=20402606569&gad_source=1&gad_campaignid=20392975386&gbraid=0AAAAAD1-3H4SrPRlOXxmb1LvpAf_dMIkF&gclid=Cj0KCQjwnovFBhDnARIsAO4V7mCVA2QiVP_xAGgSJM6bk3FJjILpeI0nTC0QpojrSp9-wGSnNphEn0QaArxKEALw_wcB)
+  - [Passende Einbaubuchse für das Netzteil](https://www.conrad.de/de/p/cliff-scd-026-niedervolt-steckverbinder-buchse-einbau-vertikal-5-5-mm-2-1-mm-1-st-735640.html)
+  - Einbaubuchse für Klinkenstecker vom SCT013(https://www.conrad.de/de/p/tru-components-718574-klinken-steckverbinder-3-5-mm-buchse-einbau-vertikal-polzahl-3-stereo-schwarz-1-st-1564526.html)
+    
 Platinenlyout wurde mit KiCad in 2 Projekten erstellt - eines für das Display, eines für den Controller.
 
 Funktionsweise technisch:
@@ -156,6 +160,8 @@ Aufbau, Inbetriebnahme
   Buchsenleisten sind nützlich für den Arduino (quasi ein muss) und für den Strom-/Spannungswandler. 
   Den Strom/Spannungswandler befreie ich von den Schraubklemmen (auslöten) und ersetze die durch Stiftleisten - einfacher Tausch.
   Dazu bekommt die Platine je Gegenstück eine Buchsenleiste 2 polig und 3 polig mit 5er Raster.
+
+  Bei der Displayplatine darauf achten, dass der Wannenstecker auf die Rückseite kommt und die Polung korrekt ist - siehe Bilder
 
 3. Prüfung der Spannungen
    An Pin 3 des Strom/Spannungswandlers müssen 24V anliegen (auf dem Board rechte Buchsenleiste oberer Pin/Buchse)
