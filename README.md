@@ -38,8 +38,8 @@ Bauteile für die Schaltung, Platine
   
   Displaypanel
   - R1 [1x Widerstand 390 Ohm](https://www.conrad.de/de/p/yageo-mf0207f390rh-mf0207fte52-390r-metallschicht-widerstand-390-axial-bedrahtet-0207-0-6-w-1-1-st-1417596.html)
-  - LED - Rot, 3mm
-  
+  - [LED - Rot, 3mm](https://www.conrad.de/de/p/quadrios-2111o155-led-bedrahtet-rot-rund-3-mm-700-mcd-30-20-ma-2-v-2583896.html)
+  - [2 Taster (Reset und Mode)](https://www.conrad.de/de/p/weltron-t604-t604-drucktaster-24-v-dc-0-05-a-1-x-aus-ein-tastend-l-x-b-x-h-6-x-6-x-9-5-mm-1-st-700479.html)
   Display
   - [2,42" 128X64-OLED-Anzeigemodul SPI - 2.42 Zoll OLED Bildschirm kompatibel mit Arduino UNO R3 - Weiße Schrift OLED :](https://www.az-delivery.de/products/oled-2-4-white?variant=44762703986955&utm_source=google&utm_medium=cpc&utm_campaign=16964979024&utm_content=166733588295&utm_term=&gad_source=1&gbraid=0AAAAADBFYGXj7s2C_h3TASz0DupxomgUw&gclid=EAIaIQobChMI-YCAy9LmjAMVH5CDBx0H8zKnEAQYAyABEgLpafD_BwE)
   
