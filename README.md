@@ -55,7 +55,7 @@ Bauteile für die Schaltung, Platine
   Sonstiges Material:
   - Bopla Gehäuse](https://www.conrad.de/de/p/bopla-euromas-m-231-02231000-industrie-gehaeuse-160-x-80-x-85-polycarbonat-lichtgrau-ral-7035-1-st-531785.html?hk=SEM&WT.mc_id=google_pla&utm_source=google&utm_medium=cpc&utm_campaign=DE+-+PMAX+-+Nonbrand+-+Learning&utm_id=20402606569&gad_source=1&gad_campaignid=20392975386&gbraid=0AAAAAD1-3H4SrPRlOXxmb1LvpAf_dMIkF&gclid=Cj0KCQjwnovFBhDnARIsAO4V7mCVA2QiVP_xAGgSJM6bk3FJjILpeI0nTC0QpojrSp9-wGSnNphEn0QaArxKEALw_wcB)
   - [Passende Einbaubuchse für das Netzteil](https://www.conrad.de/de/p/cliff-scd-026-niedervolt-steckverbinder-buchse-einbau-vertikal-5-5-mm-2-1-mm-1-st-735640.html)
-  - Einbaubuchse für Klinkenstecker vom SCT013(https://www.conrad.de/de/p/tru-components-718574-klinken-steckverbinder-3-5-mm-buchse-einbau-vertikal-polzahl-3-stereo-schwarz-1-st-1564526.html)
+  - [Einbaubuchse für Klinkenstecker vom SCT013](https://www.conrad.de/de/p/tru-components-718574-klinken-steckverbinder-3-5-mm-buchse-einbau-vertikal-polzahl-3-stereo-schwarz-1-st-1564526.html)
     
 Platinenlyout wurde mit KiCad in 2 Projekten erstellt - eines für das Display, eines für den Controller.
 
