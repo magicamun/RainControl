@@ -57,14 +57,15 @@ Bauteile für die Schaltung, Platine
   - [Passende Einbaubuchse für das Netzteil](https://www.conrad.de/de/p/cliff-scd-026-niedervolt-steckverbinder-buchse-einbau-vertikal-5-5-mm-2-1-mm-1-st-735640.html)
   - [Einbaubuchse für Klinkenstecker vom SCT013](https://www.conrad.de/de/p/tru-components-718574-klinken-steckverbinder-3-5-mm-buchse-einbau-vertikal-polzahl-3-stereo-schwarz-1-st-1564526.html)
     
-Platinenlyout wurde mit KiCad in 2 Projekten erstellt - eines für das Display, eines für den Controller.
+Das Platinenlyout wurde mit KiCad in 2 Projekten erstellt - eines für das Display, eines für den Controller.
 
 Funktionsweise technisch:
 
-Füllstand:
+Füllstandsmessung:
   Die Sonde wird mit 24V betrieben und da bietet sich ein Netzteil handelsüblich an und eine Spannungswandlung (TSR-1 2433) von den 24V DC auf 3,3V für den Rest der Schaltung (Arduino MKR Zero, Relais, Display).
   Die Sonde liefert einen Strom in Abhängigkeit vom Druck (Füllstandshöhe). Der Wandler macht aus dem Strom eine Ausgangsspannung von 0 bis Vmax (3,3V).
-  Diese Spannung wird am A0 (AnalogInput 0) des Arduino erfasst und in einen Füllstand umgerechnet - der Füllstand (Volumen) ist proportional zum gemessenen Wert an A0. (Voraussetzung ist ein Behälter, dessen Füllstand (Volumen) sich linear proportional zum Druck verhält (Senkrechter Zylinder).
+  Diese Spannung wird am A0 (AnalogInput 0) des Arduino erfasst und in einen Füllstand umgerechnet - der Füllstand (Volumen) ist proportional zum gemessenen Wert an A0.
+  Voraussetzung ist ein Behälter, dessen Füllstand (Volumen) sich linear proportional zum Druck verhält (Senkrechter Zylinder).
   
   Der Wandler für den Messwert an A0 muss vor Inbetriebnahme des Systems kalibiriert werden.
   ACHTUNG: Die Kalibrierung muss im ersten Schritt grob ohne angeschlossenen Arduino erfolgen um Beschädigungen durch Überspannung am Eingang des Arduino zu vermeiden.
