@@ -161,6 +161,9 @@ class Topic : public TopicBase {
                     changed = false;
                     _mqttclient->publish(_t, toString());
                 }
+#ifdef DEBUG
+                changed = false;
+#endif
                 Serial.print(_mqtt_id);
                 Serial.print("/");
                 Serial.print(topic);
@@ -173,35 +176,42 @@ class Topic : public TopicBase {
 /* Definition der Topics zur Speicherung der Daten sowhol hier im Code, als auch in Richtung Broker */
 char timestamp[255];
 
-Topic<time_t>   Timestamp("Timestamp", 0);
-Topic<int>      Mode("Mode", MODE_AUTO);
-Topic<char *>   Modus("Modus", modes[MODE_AUTO]);
-Topic<int>      Valve("Valve", VALVE_ZISTERNE);
-Topic<char *>   Ventil("Ventil", valves[VALVE_ZISTERNE]);
-Topic<int>      Analog("Analog", 0);
-Topic<int>      Liter("Liter", 0);
-Topic<int>      LimitLow("LimitLow", LIMIT_LOW);
-Topic<int>      LimitHigh("LimitHigh", LIMIT_HIGH);
-Topic<int>      LiterMin("LiterMin", LITER_MIN);
-Topic<int>      LiterMax("LiterMax", LITER_MAX);
-Topic<double>   Prozent("Prozent", 0.0);
-Topic<char *>   Uptime("Uptime", "");
-Topic<bool>     StatusSonde("StatusSonde", true);
-Topic<char *>   HyaRain("HyaRain", "");
-Topic<time_t>   Booted("Booted", 0);
-Topic<int>      AnalogMin("AnalogMin", ANALOG_MIN);
-Topic<int>      AnalogMax("AnalogMax", ANALOG_MAX);
-Topic<double>   CurrentFactor("CurrentFactor", 1.0);
-Topic<double>   Current("Current", 0.0);
-Topic<double>   Power("Power", 0.0);
-Topic<double>   KWh("KWh", 0.0);
-Topic<int>      Reason("Reason", 0);
-Topic<char *>   ReasonText("ReasonText", reasons[0]);
+#define TOPIC_LIST                              \
+    X(Timestamp, time_t, 0)                     \
+    X(Mode, int, MODE_AUTO)                     \
+    X(Modus, char *, modes[MODE_AUTO])          \
+    X(Valve, int, VALVE_ZISTERNE)               \
+    X(Ventil, char *, valves[VALVE_ZISTERNE])   \
+    X(Analog, int, 0)                           \
+    X(Liter, int, 0)                            \
+    X(LimitLow, int, LIMIT_LOW)                 \
+    X(LimitHigh, int, LIMIT_HIGH)               \
+    X(LiterMin, int, LITER_MIN)                 \
+    X(LiterMax, int, LITER_MAX)                 \
+    X(Prozent, double, 0.0)                     \
+    X(Uptime, char*, "")                        \
+    X(StatusSonde, bool, true)                  \
+    X(HyaRain, char*, "")                       \
+    X(Booted, time_t, 0)                        \
+    X(AnalogMin, int, ANALOG_MIN)               \
+    X(AnalogMax, int, ANALOG_MAX)               \
+    X(CurrentFactor, double, 1.0)               \
+    X(Current, double, 0.0)                     \
+    X(Power, double, 0.0)                       \
+    X(KWh, double, 0.0)                         \
+    X(Reason, int, 0)                           \
+    X(ReasonText, char*, reasons[0])
 
-TopicBase* topics[] = { &Timestamp, &Mode, &Valve, &Analog, &Liter, &LimitLow, &LimitHigh, &LiterMin, &LiterMax, &Prozent, &Valve, 
-                        &Uptime, &StatusSonde, &Ventil, &Modus, &HyaRain, &Booted, &AnalogMin, &AnalogMax, &CurrentFactor,
-                        &Current, &Power, &KWh, &Reason, &ReasonText};
 
+#define X(name, type, init)    Topic<type> name(#name, init);
+TOPIC_LIST
+#undef X
+
+#define X(name, type, init) &name,
+TopicBase* topics[] = { TOPIC_LIST };
+#undef X
+
+#define NUM_TOPICS (sizeof(topics) / sizeof(topics[0]))
 
 /* ------------------------------ Analog Input ---------------------------
    Basisklasse zur Behandlung von analogen Inputs
@@ -461,7 +471,7 @@ void MqttPublish(void) {
         MqttConnect();
     }
     Serial.println("MQTT - publishing...");
-    for (int i = 0; i < (sizeof(topics) / sizeof(topics[0])); i++) {
+    for (int i = 0; i < NUM_TOPICS; i++) {
         topics[i]->Publish(&mqttclient, MQTT_ID);
     }
 }
