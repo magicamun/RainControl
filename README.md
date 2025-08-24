@@ -6,7 +6,9 @@ Das Projekt basiert auf der Arbeit aus diesem Repo:
 
 https://github.com/Eisbaeeer/Arduino.Ethernet.Zisterne
 
-Der Nano war aber am Limit was den Speicherplatz angeht und selbst kleinste Optimierungen führten zu zu großen Images oder liefen im Betrieb instabil, daher habe ich das Projekt auf anderer Hardware aufgesetzt. Zugegeben - das ist jetzt deutlich teurer aber macht so auch mehr Spaß (finde ich).
+Der Nano war aber am Limit was den Speicherplatz angeht und selbst kleinste Optimierungen führten zu zu großen Images oder liefen im Betrieb instabil,
+daher habe ich das Projekt auf anderer Hardware aufgesetzt. Zugegeben - das ist jetzt deutlich teurer aber macht so auch mehr Spaß (finde ich).
+Ich benötige mangels stabilem WLAN im Technikraum Ethernet - daher das Shield.
 
 Hardware:
   [Arduino MKR Zero](https://store.arduino.cc/collections/mkr-family/products/arduino-mkr-zero-i2s-bus-sd-for-sound-music-digital-audio-data) 

@@ -22,10 +22,10 @@
 // const int analog_min = 50;
 // Maxwerte ohne Deckelung bei 100%
 #define ANALOG_MIN 50       // Analoger Messwert A0 (alles was kleiner ist, wird als "Sonde defekt oder nicht angeschlossen" gewertet)
-#define ANALOG_MAX 774      // Analoger Messwert A0 (bei 100% Füllgrad)
-#define LITER_MIN 100       // Restfüllmenge bei Minimum (wird nur erreicht, wenn Übersteuert wird / wurde) - der Saugschlauch wird in der Regel nicht restlos leer pumpen
+#define ANALOG_MAX 1000     // Analoger Messwert A0 (bei 100% Füllgrad)
+#define LITER_MIN 600       // Restfüllmenge bei Minimum (wird nur erreicht, wenn Übersteuert wird / wurde) - der Saugschlauch wird in der Regel nicht restlos leer pumpen
 #define LITER_MAX 6500      // Maximale Füllmenge
-#define LIMIT_LOW 500       // Liter
+#define LIMIT_LOW 700       // Liter
 #define LIMIT_HIGH 1000     // Liter
 
 #define MODE_PIN 13
@@ -174,7 +174,6 @@ class Topic : public TopicBase {
 };
 
 /* Definition der Topics zur Speicherung der Daten sowhol hier im Code, als auch in Richtung Broker */
-char timestamp[255];
 
 #define TOPIC_LIST                              \
     X(Timestamp, time_t, 0)                     \
@@ -196,7 +195,7 @@ char timestamp[255];
     X(AnalogMin, int, ANALOG_MIN)               \
     X(AnalogMax, int, ANALOG_MAX)               \
     X(CurrentFactor, double, 1.0)               \
-    X(Current, double, 0.0)                     \
+    X(Ampere, double, 0.0)                      \
     X(Power, double, 0.0)                       \
     X(KWh, double, 0.0)                         \
     X(Reason, int, 0)                           \
@@ -315,6 +314,12 @@ class Energy : public AI {
         };
 
         double Amp() {
+            Serial.print("C: ");
+            Serial.print(count);
+            Serial.print(", A: ");
+            Serial.print(aggregate);
+            Serial.print(", S:  ");
+            Serial.println(scale);
             if (count > 0 && aggregate > 2 * count) {
                 amp = max(((double) aggregate / (double)count - 1.0), 0) * scale;
             } else {
@@ -955,7 +960,7 @@ void loop() {
         for (int i = 0; i < (sizeof(topics) / sizeof(topics[0])); i++) {
             topics[i]->Changed();
         }
-        SDLogData();
+        // SDLogData();
         MqttPublish();
         pubMillis = millis();
     }
@@ -979,13 +984,13 @@ void loop() {
 #ifdef DEBUG
         Serial.println("Analogen Wert lesen Stromsensor");
 #endif
-        Current = sct013.Amp();
-        if (Current > 0) {
+        Ampere = sct013.Amp();
+        if (Ampere > 0) {
             HyaRain = "On";
         } else {
             HyaRain = "Off";
         }
-        Power = sct013.Watt();
+        Power = sct013.Power();
         KWh = sct013.KWh();
 
         average = sct013.Average();
@@ -994,13 +999,13 @@ void loop() {
         if (Ethernet.hardwareStatus() != EthernetNoHardware && Ethernet.linkStatus() == LinkON) {
             ntp.update();
 
-            // Serial.println("Get NTP-Time Epoch");
-            Timestamp = ntp.epoch();
-            // sprintf(timestamp, "%d.%d.%d %02d:%02d:%02d", (int)rtc.getDay(), (int)rtc.getMonth(), (int)rtc.getYear(), (int)rtc.getHours(), (int)rtc.getMinutes(), (int)rtc.getSeconds());
-            // sprintf(timestamp, "%s", PrintTimeStamp(localTimefromUTC(timestamp_t)));
 #ifdef DEBUG
-            sprintf(timestamp, "%s", ntp.formattedTime("%d.%m.%Y %H:%M:%S"));
-            Serial.println(timestamp);
+            Serial.println("Get NTP-Time Epoch");
+#endif
+            Timestamp = ntp.epoch();
+#ifdef DEBUG
+            sprintf(buf, "%s", ntp.formattedTime("%d.%m.%Y %H:%M:%S"));
+            Serial.println(buf);
 #endif
         }
         
