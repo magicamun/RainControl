@@ -82,54 +82,43 @@ struct is_same_type<A, A> { static const bool value = true; };
 
 class TopicBase {
     protected:
+        const char *name;
+        const char *fmt;
         bool changed;
+    
     public:
-        virtual void Publish(PubSubClient *_mqttclient, char * _mqtt_id) = 0;
-        virtual char *Name() = 0;
-        virtual char *toString() = 0;
+        TopicBase(const char *_name, const char *_fmt = nullptr) : name(_name), fmt(_fmt), changed(true) {};
         virtual ~TopicBase() {};
+
+        const char * getName() const { return name; };
+        void setFormat(const char *_fmt) { fmt = _fmt; };
         void Changed() {changed = true;};
+
+        // Von abgeleiteten Klassen (Topic) zu Implementieren
+        virtual void Publish(PubSubClient *_mqttclient, char * _mqtt_id) = 0;
+        virtual char *toString() = 0;
 };
+
+// ---------------------------------------------------------
+// Hilfsfunktion für time_t → String
+// ---------------------------------------------------------
+inline void timeToString(const time_t* t, const char* fmt, char* buffer, size_t size) {
+    struct tm *timeinfo = localtime(t);
+    if (timeinfo) {
+        strftime(buffer, size, fmt ? fmt : "%d.%m.%Y %H:%M:%S", timeinfo);
+    } else {
+        snprintf(buffer, size, "[invalid time]");
+    }
+}
 
 template <typename Type>
 class Topic : public TopicBase {
     private:
         Type data;
-        char topic[128];
-        char tostring[255];
 
     public:
-        Topic(const char *_name, Type value) : data(value) {
-            strcpy(&topic[0], _name);
-        }
+        Topic(const char *_name, Type value, const char *_fmt = nullptr) : TopicBase(_name, _fmt), data(value) { };
 
-        char *Name() {
-            return (char *)&topic[0];
-        }
-
-        char *toString() {
-            tostring[0] = 0;
-
-            if (is_same_type<Type, int>::value) {
-                snprintf(tostring, sizeof(tostring), "%d", data);
-            } else if (is_same_type<Type, float>::value || is_same_type<Type, double>::value) {
-                snprintf(tostring, sizeof(tostring), "%.3f", data);
-            } else if (is_same_type<Type, const char*>::value || is_same_type<Type, char*>::value) {
-                snprintf(tostring, sizeof(tostring), "%s", data);
-            } else if (is_same_type<Type, const bool>::value || is_same_type<Type, bool>::value) {
-                snprintf(tostring, sizeof(tostring), "%s", data ? "true" : "false");
-            } else if (is_same_type<Type, const time_t>::value || is_same_type<Type, time_t>::value) {
-                struct tm *timeinfo;
-                if (timeinfo = localtime((const time_t*)&data)) {
-                    strftime(tostring, sizeof(tostring), "%d.%m.%Y %H:%M:%S", timeinfo);
-                } else {
-                    snprintf(tostring, sizeof(tostring), "[invalid time]");
-                }
-            } else {
-                snprintf(tostring, sizeof(tostring), "[unsupported type]");
-            }
-            return tostring;
-        }
         // Zuweisungsoperator überladen
         Topic<Type>& operator=(const Type& value) {
             setData(value);
@@ -140,10 +129,9 @@ class Topic : public TopicBase {
         operator Type() const {
             return getData();
         }
-
-        Type getData() const {
-            return data;
-        };
+    
+        // Getter, Setter
+        Type getData() const { return data; }
 
         void setData(Type value) {
             if (value != data) {
@@ -152,10 +140,38 @@ class Topic : public TopicBase {
             }
         };
 
-        void Publish(PubSubClient *_mqttclient, char * _mqtt_id) {
+        char *toString() override {
+            static char tostring[64];
+            tostring[0] = 0;
+
+            if constexpr (is_same_type<Type, const time_t>::value || is_same_type<Type, time_t>::value) {
+                timeToString(&data, fmt, tostring, sizeof(tostring));
+                return tostring;
+            }
+            
+            if (fmt) {
+                snprintf(tostring, sizeof(tostring), fmt, data);
+                return tostring;
+            }
+            if (is_same_type<Type, int>::value) {
+                snprintf(tostring, sizeof(tostring), "%d", data);
+            } else if (is_same_type<Type, float>::value || is_same_type<Type, double>::value) {
+                snprintf(tostring, sizeof(tostring), "%.3f", data);
+            } else if (is_same_type<Type, const char*>::value || is_same_type<Type, char*>::value) {
+                snprintf(tostring, sizeof(tostring), "%s", data);
+            } else if (is_same_type<Type, const bool>::value || is_same_type<Type, bool>::value) {
+                snprintf(tostring, sizeof(tostring), "%s", data ? "true" : "false");
+            } else {
+                snprintf(tostring, sizeof(tostring), "[unsupported type]");
+            }
+            return tostring;
+        }
+
+
+        void Publish(PubSubClient *_mqttclient, char * _mqtt_id) override {
             char _t[256];
 
-            sprintf(_t, "%s/%s", _mqtt_id, topic);
+            sprintf(_t, "%s/%s", _mqtt_id, name);
             if (changed) {
                 if (_mqttclient->connected()) {
                     changed = false;
@@ -166,7 +182,7 @@ class Topic : public TopicBase {
 #endif
                 Serial.print(_mqtt_id);
                 Serial.print("/");
-                Serial.print(topic);
+                Serial.print(name);
                 Serial.print(" ");
                 Serial.println(toString());
             }
@@ -175,38 +191,38 @@ class Topic : public TopicBase {
 
 /* Definition der Topics zur Speicherung der Daten sowhol hier im Code, als auch in Richtung Broker */
 
-#define TOPIC_LIST                              \
-    X(Timestamp, time_t, 0)                     \
-    X(Mode, int, MODE_AUTO)                     \
-    X(Modus, char *, modes[MODE_AUTO])          \
-    X(Valve, int, VALVE_ZISTERNE)               \
-    X(Ventil, char *, valves[VALVE_ZISTERNE])   \
-    X(Analog, int, 0)                           \
-    X(Liter, int, 0)                            \
-    X(LimitLow, int, LIMIT_LOW)                 \
-    X(LimitHigh, int, LIMIT_HIGH)               \
-    X(LiterMin, int, LITER_MIN)                 \
-    X(LiterMax, int, LITER_MAX)                 \
-    X(Prozent, double, 0.0)                     \
-    X(Uptime, char*, "")                        \
-    X(StatusSonde, bool, true)                  \
-    X(HyaRain, char*, "")                       \
-    X(Booted, time_t, 0)                        \
-    X(AnalogMin, int, ANALOG_MIN)               \
-    X(AnalogMax, int, ANALOG_MAX)               \
-    X(CurrentFactor, double, 1.0)               \
-    X(Ampere, double, 0.0)                      \
-    X(Power, double, 0.0)                       \
-    X(KWh, double, 0.0)                         \
-    X(Reason, int, 0)                           \
-    X(ReasonText, char*, reasons[0])
+#define TOPIC_LIST                                  \
+    X(Timestamp, time_t, 0, "%d.%m.%Y %H:%M:%S")    \
+    X(Mode, int, MODE_AUTO, "%d")                   \
+    X(Modus, char *, modes[MODE_AUTO], "%s")        \
+    X(Valve, int, VALVE_ZISTERNE, "%d")             \
+    X(Ventil, char *, valves[VALVE_ZISTERNE], "%s") \
+    X(Analog, int, 0, "%d")                         \
+    X(Liter, int, 0, "%4d")                         \
+    X(LimitLow, int, LIMIT_LOW, "%d")               \
+    X(LimitHigh, int, LIMIT_HIGH, "%d")             \
+    X(LiterMin, int, LITER_MIN, "%d")               \
+    X(LiterMax, int, LITER_MAX, "%d")               \
+    X(Prozent, double, 0.0, "%3.1f%%")              \
+    X(Uptime, char*, "", "%s")                      \
+    X(StatusSonde, bool, true, nullptr)             \
+    X(HyaRain, char*, "", "%s")                     \
+    X(Booted, time_t, 0, "%d.%m.%Y %H:%M:%S")       \
+    X(AnalogMin, int, ANALOG_MIN, "%d")             \
+    X(AnalogMax, int, ANALOG_MAX, "%d")             \
+    X(CurrentFactor, double, 1.0, nullptr)          \
+    X(Ampere, double, 0.0, "%.2f")                  \
+    X(Power, double, 0.0, "%.2f")                   \
+    X(KWh, double, 0.0, "%.2f")                 \
+    X(Reason, int, 0, "%d")                         \
+    X(ReasonText, char*, reasons[0], nullptr)
 
 
-#define X(name, type, init)    Topic<type> name(#name, init);
+#define X(name, type, init, format)    Topic<type> name(#name, init, format);
 TOPIC_LIST
 #undef X
 
-#define X(name, type, init) &name,
+#define X(name, type, init, format) &name,
 TopicBase* topics[] = { TOPIC_LIST };
 #undef X
 
@@ -314,12 +330,14 @@ class Energy : public AI {
         };
 
         double Amp() {
+#ifdef DEBUG
             Serial.print("C: ");
             Serial.print(count);
             Serial.print(", A: ");
             Serial.print(aggregate);
             Serial.print(", S:  ");
             Serial.println(scale);
+#endif
             if (count > 0 && aggregate > 2 * count) {
                 amp = max(((double) aggregate / (double)count - 1.0), 0) * scale;
             } else {
@@ -627,7 +645,7 @@ bool SDLogData() {
         if (SDLogger = SD.open(LOGFILE, FILE_WRITE)) {
             if (SDLogger.size() == 0) {
                 for (int i = 0; i < (sizeof(topics) / sizeof(topics[0])); i++) {
-                    SDLogger.write(topics[i]->Name());
+                    SDLogger.write(topics[i]->getName());
                     SDLogger.write(';');
                 }
                 SDLogger.write('\n');
@@ -746,7 +764,7 @@ void CalcUptime() {
     Uptime = uptime;
 #ifdef DEBUG
     Serial.print("Uptime: ");
-    Serial.print(uptime);
+    Serial.println(uptime);
 #endif
     if (setmode) {
         Serial.print(setmode ? " Settings-Mode" : "");
@@ -880,7 +898,7 @@ void Display() {
 #ifdef HAS_DISPLAY
     u8g2.drawStr(0,10, buf);	// write something to the internal memory
 #endif
-    sprintf(buf, "Level : %s l, %s%%", Liter.toString(), Prozent.toString());
+    sprintf(buf, "Level : %s l, %s", Liter.toString(), Prozent.toString());
 #ifdef DEBUG
     Serial.println(buf);
 #endif
