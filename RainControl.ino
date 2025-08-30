@@ -203,7 +203,7 @@ class Topic : public TopicBase {
     X(LimitHigh, int, LIMIT_HIGH, "%d")             \
     X(LiterMin, int, LITER_MIN, "%d")               \
     X(LiterMax, int, LITER_MAX, "%d")               \
-    X(Prozent, double, 0.0, "%3.1f%%")              \
+    X(Prozent, double, 0.0, "%5.1f%%")              \
     X(Uptime, char*, "", "%s")                      \
     X(StatusSonde, bool, true, nullptr)             \
     X(HyaRain, char*, "", "%s")                     \
@@ -636,6 +636,93 @@ U8G2_SSD1309_128X64_NONAME2_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 2, /* dc=*/ 3, /*
 #include <Wire.h>
 #endif
 
+#define DISPLAY_WIDTH 128
+#define DISPLAY_HEIGHT 64
+#define FONT_HEIGHT 10
+#define MAX_LINES (DISPLAY_HEIGHT / FONT_HEIGHT)
+
+class DisplayConsole {
+    U8G2 &display;
+    String lines[MAX_LINES];        // Zeilenpuffer
+    int currentLine = 0;
+    
+    public:
+        DisplayConsole(U8G2 &disp) : display(disp) {};
+
+        void begin() {
+            display.clearBuffer();
+            display.setFont(u8g2_font_t0_11_tf);
+        }
+
+        void println(const String &text) {
+            lines[currentLine] = text;
+            currentLine++;
+            if(currentLine >= MAX_LINES) {
+                scrollUp();
+                currentLine = MAX_LINES - 1;
+            }
+            render();
+        }
+
+        // Überladung für IPAddress
+        void println(const IPAddress &ip) {
+            String ipStr = String(ip[0]) + "." + String(ip[1]) + "." + String(ip[2]) + "." + String(ip[3]);
+            println(ipStr); // ruft bestehenden println(String) auf
+        }
+
+        void print(const String &text) {
+            lines[currentLine] += text;
+            render();
+        }
+
+        void println(const char* text) {
+            println(String(text)); // ruft das bestehende println(String) auf
+        }
+
+        void print(const char* text) {
+            print(String(text)); // ruft das bestehende print(String) auf
+        }
+
+        void setLine(int index, const String &text) {
+            if (index >= 0 && index < MAX_LINES) {
+                lines[index] = text;
+            }
+        }
+
+        String getLine(int index) {
+            if (index >= 0 && index <= MAX_LINES) {
+                return lines[index];
+            }
+            return "";
+        }
+
+        void scrollUp() {
+            for (int i = 1; i< MAX_LINES; i++) {
+                lines[i - 1] = lines[i];
+            }
+            lines[MAX_LINES - 1] = "";
+        }
+
+        void render() {
+            display.clearBuffer();
+            for (int i = 0; i < MAX_LINES; i++) {
+                display.drawStr(0, (i + 1) * FONT_HEIGHT, lines[i].c_str());
+            }
+            display.sendBuffer();
+        }
+
+        void renderAll() {
+            display.clearBuffer();
+
+            for (int i = 0; i < MAX_LINES; i++) {
+                display.drawStr(0, (i + 1) * FONT_HEIGHT, lines[i].c_str());
+            }
+            display.sendBuffer();
+        }
+};
+
+DisplayConsole console(u8g2);
+
 /*-------------------------------- Functions ---------------------------- */
 bool SDLogData() {
     char logbuf[256];
@@ -845,13 +932,16 @@ void setup() {
     Serial.print("ModePin: ");
     Serial.println(pin_stat == LOW ? "Low" : "High");
 #endif
-    delay(3000);
+    delay(1000);
 
     SDsetup();
     
     Serial.println("Initializing TCP");
-  
+
+#ifdef HAS_DISPLAY
     u8g2.begin();
+    console.begin();
+#endif
 
     ret = Ethernet.begin(mac);
 
@@ -860,6 +950,19 @@ void setup() {
             Ethernet.begin(mac, ip, ns, gw, sn);
         }
         Udp.begin(8888);
+
+#ifdef HAS_DISPLAY
+        console.println(ret == 0 ? "Static" : "Dhcp");
+        console.print("localIP: ");
+        console.println(Ethernet.localIP());
+        console.print("subnetMask: ");
+        console.println(Ethernet.subnetMask());
+        console.print("gatewayIP: ");
+        console.println(Ethernet.gatewayIP());
+        console.print("dnsServerIP: ");
+        console.println(Ethernet.dnsServerIP());
+#endif
+
         Serial.println(ret == 0 ? "Static" : "Dhcp");
         Serial.print("localIP: ");
         Serial.println(Ethernet.localIP());
@@ -877,7 +980,7 @@ void setup() {
         ntp.ruleDST("CEST", Last, Sun, Mar, 2, 120); // last sunday in march 2:00, timetone +120min (+1 GMT + 1h summertime offset)
         ntp.ruleSTD("CET", Last, Sun, Oct, 3, 60); // last sunday in october 3:00, timezone +60min (+1 GMT)
         ntp.updateInterval(1000);
-        delay(2000);
+        delay(1000);
         ntp.begin();
     } else {
         Serial.println("No Ethernet - either no Hardware attached or no Link!");
@@ -885,56 +988,27 @@ void setup() {
     Serial.println("Setup Done!");
 }
 
-
-void Display() {
-#ifdef HAS_DISPLAY
-    u8g2.clearBuffer();					// clear the internal memory
-    u8g2.setFont(u8g2_font_t0_11_tf);	// choose a suitable font
+void CDisplay() {
+#ifndef HAS_DISPLAY
+    return;
 #endif
-    sprintf(buf, "%s", VERSION);
-#ifdef DEBUG
-    Serial.println(buf);
-#endif
-#ifdef HAS_DISPLAY
-    u8g2.drawStr(0,10, buf);	// write something to the internal memory
-#endif
-    sprintf(buf, "Level : %s l, %s", Liter.toString(), Prozent.toString());
-#ifdef DEBUG
-    Serial.println(buf);
-#endif
-#ifdef HAS_DISPLAY
-    u8g2.drawStr(0,20, buf);	// write something to the internal memory
-#endif
+    console.begin();
+    console.setLine(0, VERSION);
+    sprintf(buf, "Level : %s l %s", Liter.toString(), Prozent.toString());
+    console.setLine(1, buf);
     if (!setmode) {
         sprintf(buf, "Modus : %s", Modus.toString());
     } else {
         sprintf(buf, "Modus : %s(%d)", Modus.toString(), mode_count);
     }
-#ifdef DEBUG
-    Serial.println(buf);
-#endif
-#ifdef HAS_DISPLAY
-    u8g2.drawStr(0,30, buf);
-#endif
+    console.setLine(2, buf);
     sprintf(buf, "Status: %s", ReasonText.toString());
-#ifdef DEBUG
-    Serial.println(buf);
-#endif
-#ifdef HAS_DISPLAY
-    u8g2.drawStr(0,40, buf);
-#endif
+    console.setLine(3, buf);
     sprintf(buf, "Ventil: %s", Ventil.toString());
-#ifdef DEBUG
-    Serial.println(buf);
-#endif
-#ifdef HAS_DISPLAY
-    u8g2.drawStr(0,50, buf);
-    u8g2.drawStr(0,60, Timestamp.toString());
-
-    u8g2.sendBuffer();	// transfer internal memory to the display
-#endif
+    console.setLine(4, buf);
+    console.setLine(5, Timestamp.toString());
+    console.renderAll();
 }
-
 
 void loop() {
     // put your main code here, to run repeatedly:
@@ -1077,7 +1151,7 @@ void loop() {
         }
 
         // print out to Display
-        Display();
+        CDisplay();
         MqttPublish();
         updateMillis = millis();
     }
