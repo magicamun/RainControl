@@ -2657,18 +2657,6 @@
 				)
 				(polyline
 					(pts
-						(xy 0.635 0) (xy 1.27 0)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
 						(xy 1.905 0) (xy 2.54 0)
 					)
 					(stroke
@@ -2681,7 +2669,7 @@
 				)
 				(polyline
 					(pts
-						(xy 2.54 2.54) (xy 2.54 3.81) (xy 2.54 2.54) (xy 2.54 2.54) (xy 3.175 3.175) (xy 2.54 3.81)
+						(xy 2.54 3.81) (xy 2.54 2.54) (xy 3.175 3.175) (xy 2.54 3.81)
 					)
 					(stroke
 						(width 0)
@@ -3095,10 +3083,6 @@
 	(no_connect
 		(at 132.08 60.96)
 		(uuid "7008f228-bdd0-40b3-bbeb-3dba4d8c8e80")
-	)
-	(no_connect
-		(at 132.08 78.74)
-		(uuid "933b7911-0340-46cf-8ea8-0f202072a76e")
 	)
 	(no_connect
 		(at 182.88 68.58)
@@ -4609,6 +4593,28 @@
 		(uuid "fa4150e5-7335-475c-81bf-e23121edae46")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 123.8939 43.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VCC"
+		(shape input)
+		(at 132.08 78.74 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "ff6fc106-6967-4393-bad4-49659b4c11e3")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 125.4662 78.74 0)
 			(effects
 				(font
 					(size 1.27 1.27)
