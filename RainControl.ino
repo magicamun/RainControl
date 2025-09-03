@@ -2,6 +2,25 @@
 #include <avr/dtostrf.h>
 #include <PubSubClient.h>
 #include <Time.h>
+#include <Ethernet.h>
+EthernetClient ethClient;
+
+#include <EthernetUdp.h>
+EthernetUDP Udp;
+
+#include <MyNTP.h>
+NTP ntp(Udp);
+
+#include <SD.h>
+#include <U8g2lib.h>
+U8G2_SSD1309_128X64_NONAME2_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 2, /* dc=*/ 3, /* reset=*/ 4);
+
+#ifdef U8X8_HAVE_HW_SPI
+#include <SPI.h>
+#endif
+#ifdef U8X8_HAVE_HW_I2C
+#include <Wire.h>
+#endif
 
 /* ---------------------------- allgemeine Settings ----------------------------- */
 #define VERSION "RainControl V1.0"
@@ -21,8 +40,15 @@
 // const int analog_max = 972;
 // const int analog_min = 50;
 // Maxwerte ohne Deckelung bei 100%
-#define ANALOG_MIN 50       // Analoger Messwert A0 (alles was kleiner ist, wird als "Sonde defekt oder nicht angeschlossen" gewertet)
-#define ANALOG_MAX 1000     // Analoger Messwert A0 (bei 100% Füllgrad)
+#include "SAMD_AnalogCorrection.h"
+
+#define ADC_RESOLUTION_BITS  12 // do not change. This library only supports 12 bit resolution.
+#define ADC_RANGE            (1 << ADC_RESOLUTION_BITS)
+#define ADC_TOP_VALUE        (ADC_RANGE - 1)
+
+#define ANALOG_MIN 200      // Analoger Messwert A0 (alles was kleiner ist, wird als "Sonde defekt oder nicht angeschlossen" gewertet)
+#define ANALOG_MAX 4000     // Analoger Messwert A0 (bei 100% Füllgrad)
+
 #define LITER_MIN 600       // Restfüllmenge bei Minimum (wird nur erreicht, wenn Übersteuert wird / wurde) - der Saugschlauch wird in der Regel nicht restlos leer pumpen
 #define LITER_MAX 6500      // Maximale Füllmenge
 #define LIMIT_LOW 700       // Liter
@@ -103,7 +129,11 @@ class TopicBase {
 // Hilfsfunktion für time_t → String
 // ---------------------------------------------------------
 inline void timeToString(const time_t* t, const char* fmt, char* buffer, size_t size) {
+    if (!t || !buffer || size == 0) 
+        return;
+
     struct tm *timeinfo = localtime(t);
+    
     if (timeinfo) {
         strftime(buffer, size, fmt ? fmt : "%d.%m.%Y %H:%M:%S", timeinfo);
     } else {
@@ -233,6 +263,7 @@ TopicBase* topics[] = { TOPIC_LIST };
    Instantiiert für einen Analogen Eingang, optional wird ein Offset/Average
    für den Messwert mitgegeben - nützlich für Messwerte, die um einen Mittelpunkt schwanken
    ----------------------------------------------------------------------- */
+/* ------------------------------ Analog Input ---------------------- */
 class AI {
     protected:
         int pin;
@@ -254,15 +285,43 @@ class AI {
             average += val;
             count++;
         };
+
+        int Aggregate() {
+            return aggregate;
+        }
+
         // Wert zurückgeben, dabei die Summe der Messwerte durch die Anzahl teilen
         int Value() {
-            if (count > 0 && aggregate > 0) {
+            if (count > 0 && aggregate > count) {
                 return max(aggregate / count - 1, 0);
             } else {
                 return 0;
             }
         };
-        // Average zurückgeben (das ist der Mittelwert der Messungen - bei )
+
+        // Value als Wert im verhältnis zu Max und minimun zurückgeben (integer)
+        int Value(int _max, int _min = 0) {
+            if (_max > _min) {
+                return Value() / ADC_TOP_VALUE * (_max - _min);
+            } else {
+                return 0;
+            }
+        }
+
+        // Value als Wert im verhältnis zu Max und minimun zurückgeben (double)
+        double Value(double _max, double _min = 0.0) {
+            if (_max > _min) {
+                return (double) Value() / (double)ADC_TOP_VALUE * (_max - _min);
+            } else {
+                return 0;
+            }
+        }
+        // Value als Prozentwert zurückgeben (double)
+        double Percent() {
+            return (double)Value() / (double)ADC_TOP_VALUE * 100.0;
+        }
+
+        // Mittelwert der Messungen - nützlich, notwendig für Wechselspannungswerte zur erkennung der Kalibrierung Nullpunkt
         int Average() {
             if (count > 0) {
                 return average / count;
@@ -270,6 +329,7 @@ class AI {
                 return 0;
             }
         };
+
         // Messreihe neu starten, alle Werte zurücksetzen
         void Restart() {
             aggregate = 0;
@@ -285,7 +345,7 @@ class AI {
 /* ------------------------------ Analog Input ---------------------------
    Energy - Klasse für die Messwertermittlung von Werten des Stromsensors SCT013
    die Werte am Eingang A1 sind über den Spannungsteiler an A1 um 1,65V angehoben
-   und oszillieren um 512 herum - Mittelpunkt, Average wird mit 512 begonnen
+   und oszillieren um die Hälfte der ADC_RANGE herum - Mittelpunkt, Average wird mit ADC_RANGE / 2 begonnen
    ----------------------------------------------------------------------- */
 class Energy : public AI {
     private:
@@ -307,7 +367,7 @@ class Energy : public AI {
         unsigned long wattmillis;
 
     public:
-        Energy(int _pin, double _ampmax, double _vmax, double _volt = 230, double _vrefmax = 3.3, double _vrefmin = 0, int _imax = 1024, int _imin = 0) : AI(_pin, 512) {
+        Energy(int _pin, double _ampmax, double _vmax, double _volt = 230, double _vrefmax = 3.3, double _vrefmin = 0, int _imax = ADC_RANGE, int _imin = 0) : AI(_pin, ADC_RANGE / 2) {
             ampmax = _ampmax;
             vmax = _vmax;
             volt = _volt;
@@ -320,11 +380,10 @@ class Energy : public AI {
             watt = 0;
             // Scale ist der Faktor mit dem der analoge Messwert multipliziert werden muss. Er ergibt sich aus:
             // maximalem Messbereich des Sensors in Ampere , maximaler Referenzspannung (Arduino Zero = 3.3)
-            // minimaler Referenzspannung (0.0), dem Maximalen Wert des Analogen Inputs (1024) dem minimalen Wert (0)
+            // minimaler Referenzspannung (0.0), dem Maximalen Wert des Analogen Inputs (ADC_MAX_VALUE) dem minimalen Wert (0)
             // und der maximalen Spannung des Sensors SCT013 (1V)
-            scale = ampmax * (vrefmax - vrefmin) / (imax - imin) / vmax;
+            scale = ampmax * (vrefmax - vrefmin) / (double)(imax - imin) / vmax;
         };
-
         double Scale() {
             return scale;
         };
@@ -339,15 +398,17 @@ class Energy : public AI {
             Serial.println(scale);
 #endif
             if (count > 0 && aggregate > 2 * count) {
-                amp = max(((double) aggregate / (double)count - 1.0), 0) * scale;
+                amp = roundf(max(((double) aggregate / (double)count - 1.0), 0) * scale * 10) / 10;
             } else {
                 amp = 0;
             }
             return amp;
         };
+
         double Volt() {
             return volt;
         };
+
         double Power() {
             return Volt() * Amp();
         };
@@ -388,15 +449,10 @@ class Energy : public AI {
 };
 
 AI Sonde(A0);                               // Drucksonde Zisterne an A0
-Energy sct013(A1, 5.0, 1.0, 230, 3.3);      // Energiesensor SCT013 - 5A, 1V, 230V Netzspannung, 3.3V VCC Arduino (MKR Zero) an A1
-int average = 512;                           // Mittelpunkts-Wert selbstkalibrierend für Stromsensor SCT013
+Energy sct013(A1, 5.0, 1.0, 230, 3.3, 0, ADC_TOP_VALUE);      // Energiesensor SCT013 - 5A, 1V, 230V Netzspannung, 3.3V VCC Arduino (MKR Zero) an A1
+int average = ADC_RANGE / 2;                           // Mittelpunkts-Wert selbstkalibrierend für Stromsensor SCT013
 
 /* ----------------------------- Ethernet ---------------------------- */
-#include <Ethernet.h>
-#include <EthernetUdp.h>
-EthernetClient ethClient;
-EthernetUDP Udp;
-
 // MAC-Addresse bitte anpassen! Sollte auf dem Netzwerkmodul stehen. Ansonsten eine generieren.
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0x0C };
 
@@ -406,8 +462,17 @@ IPAddress ns(192, 168,   3, 254);
 IPAddress gw(192, 168,   3, 254);
 IPAddress sn(255, 255, 255,   0);
 
+
+/* ------------------------------- NTP ------------------------------- */
+#define NTPSERVER "pool.ntp.org"
+bool ntp_time = false;
+
+#define SECONDS_PER_MINUTE 60
+#define SECONDS_PER_HOUR (60 * SECONDS_PER_MINUTE)
+#define SECONDS_PER_DAY (24 * SECONDS_PER_HOUR)
+
 /* ---------------------------- SD Card ---------------------------- */
-#include <SD.h>
+
 const int chipSelect = SDCARD_SS_PIN;
 boolean SDStatus = true;
 File SDSettings;
@@ -583,7 +648,7 @@ void  MqttSetCalibrate(char *payload) {
             AnalogMin = sddata.analogMin = max(atoi(value), 0);
             SDWriteSettings();
         } else if (strcmp(key, "analogmax") == 0) {
-            AnalogMax = sddata.analogMax = min(atoi(value), 1023);
+            AnalogMax = sddata.analogMax = min(atoi(value), ADC_TOP_VALUE);
             SDWriteSettings();
         } else if (strcmp(key, "litermax") == 0) {
             LiterMax = sddata.literMax = atoi(value);
@@ -614,28 +679,7 @@ void MqttCallback(char *topic, byte *payload, unsigned int length) {
     }
 }
 
-/* ------------------------------- NTP ------------------------------- */
-#include <NTP.h>
-#define NTPSERVER "pool.ntp.org"
-bool ntp_time = false;
-
-#define SECONDS_PER_MINUTE 60
-#define SECONDS_PER_HOUR (60 * SECONDS_PER_MINUTE)
-#define SECONDS_PER_DAY (24 * SECONDS_PER_HOUR)
-
-NTP ntp(Udp);
-
 /* ------------------------------- Display ---------------------------- */
-#include <U8g2lib.h>
-U8G2_SSD1309_128X64_NONAME2_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 2, /* dc=*/ 3, /* reset=*/ 4);
-
-#ifdef U8X8_HAVE_HW_SPI
-#include <SPI.h>
-#endif
-#ifdef U8X8_HAVE_HW_I2C
-#include <Wire.h>
-#endif
-
 #define DISPLAY_WIDTH 128
 #define DISPLAY_HEIGHT 64
 #define FONT_HEIGHT 10
@@ -985,6 +1029,15 @@ void setup() {
     } else {
         Serial.println("No Ethernet - either no Hardware attached or no Link!");
     }
+
+    // Set Analog Refererences, and Resoultion
+    analogReference(AR_EXTERNAL);
+    analogReadResolution(ADC_RESOLUTION_BITS);
+    
+    // Read https://github.com/arduino/ArduinoCore-samd/blob/master/libraries/SAMD_AnalogCorrection/examples/CorrectADCResponse/CorrectADCResponse.ino and determine the Value for the Correction
+
+    analogReadCorrection(8, 2058);
+
     Serial.println("Setup Done!");
 }
 
