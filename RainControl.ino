@@ -9,7 +9,7 @@ EthernetClient ethClient;
 EthernetUDP Udp;
 
 #include <MyNTP.h>
-NTP ntp(Udp);
+MyNTP ntp(Udp);
 
 #include <SD.h>
 #include <U8g2lib.h>
@@ -128,12 +128,12 @@ class TopicBase {
 // ---------------------------------------------------------
 // Hilfsfunktion für time_t → String
 // ---------------------------------------------------------
-inline void timeToString(const time_t* t, const char* fmt, char* buffer, size_t size) {
+inline void timeToString(const time_t *t, const char* fmt, char* buffer, size_t size) {
     if (!t || !buffer || size == 0) 
         return;
 
-    struct tm *timeinfo = localtime(t);
-    
+    struct tm *timeinfo = ntp.localTime(*t);
+
     if (timeinfo) {
         strftime(buffer, size, fmt ? fmt : "%d.%m.%Y %H:%M:%S", timeinfo);
     } else {
@@ -240,10 +240,10 @@ class Topic : public TopicBase {
     X(Booted, time_t, 0, "%d.%m.%Y %H:%M:%S")       \
     X(AnalogMin, int, ANALOG_MIN, "%d")             \
     X(AnalogMax, int, ANALOG_MAX, "%d")             \
-    X(CurrentFactor, double, 1.0, nullptr)          \
+    X(Scale, double, 1.0, nullptr)                  \
     X(Ampere, double, 0.0, "%.2f")                  \
     X(Power, double, 0.0, "%.2f")                   \
-    X(KWh, double, 0.0, "%.2f")                 \
+    X(KWh, double, 0.0, "%.2f")                     \
     X(Reason, int, 0, "%d")                         \
     X(ReasonText, char*, reasons[0], nullptr)
 
@@ -488,7 +488,7 @@ struct SDData {
     int literMax;
     int limitLow;
     int limitHigh;
-    double currentFactor;
+    double scale;
 } sddata = {"RC", ANALOG_MIN, ANALOG_MAX, LITER_MIN, LITER_MAX, LIMIT_LOW, LIMIT_HIGH, 15.0};
 char *sdini_format = "%2s;%d;%d;%d;%d;%d;%d;%s;";
 
@@ -654,7 +654,7 @@ void  MqttSetCalibrate(char *payload) {
             LiterMax = sddata.literMax = atoi(value);
             SDWriteSettings();
         } else if (strcmp(key, "factor") == 0) {
-            CurrentFactor = sddata.currentFactor = atof(value);
+            Scale = sddata.scale = atof(value);
             SDWriteSettings();
         }
     }
@@ -801,8 +801,7 @@ bool SDReadSettings() {
     int i = 0;
     char id[4];
     int aMin, aMax, lMin, lMax, lLow, lHigh;
-    double cFactor;
-    char ccFactor[64];
+    char cscale[64];
 
     if (SDStatus) {
         Serial.print("read Settings from SD Card...");
@@ -813,10 +812,10 @@ bool SDReadSettings() {
             SDSettings.close();
             sdbuf[i] = 0;
 
-            sscanf(sdbuf, sdini_format, &id[0], &aMin, &aMax, &lMax, &lLow, &lHigh, &ccFactor[0]);
+            sscanf(sdbuf, sdini_format, &id[0], &aMin, &aMax, &lMax, &lLow, &lHigh, &cscale[0]);
             Serial.println("ok");
             if (id[0] == 'R' && id[1] == 'C') {
-                sprintf(line, "AnalogMin: %d, AnalogMax: %d, LiterMin: %d, LiterMax: %d, LimitLow: %d, LimitHigh: %d, cFactor: %s", aMin, aMax, lMin, lMax, lLow, lHigh, ccFactor[0]);
+                sprintf(line, "AnalogMin: %d, AnalogMax: %d, LiterMin: %d, LiterMax: %d, LimitLow: %d, LimitHigh: %d, cFactor: %s", aMin, aMax, lMin, lMax, lLow, lHigh, cscale[0]);
                 Serial.println(line);
                 AnalogMin       = sddata.analogMin = aMin;
                 AnalogMax       = sddata.analogMax = aMax;
@@ -824,7 +823,7 @@ bool SDReadSettings() {
                 LiterMax        = sddata.literMax = lMax;
                 LimitLow        = sddata.limitLow = lLow;
                 LimitHigh       = sddata.limitHigh = lHigh;
-                CurrentFactor   = sddata.currentFactor = atof((char *)&ccFactor[0]);
+                Scale           = sddata.scale = atof((char *)&cscale[0]);
             } else {
                 Serial.println("Wrong format of settings!");
             }
@@ -836,11 +835,11 @@ bool SDReadSettings() {
 
 bool SDWriteSettings() {
     char sdbuf[256];
-    char ccFactor[64];
+    char cscale[64];
 
     if (SDStatus) {
-        dtostrf(sddata.currentFactor,8,3, ccFactor);
-        sprintf((char *)&sdbuf[0], sdini_format, sddata.id, sddata.analogMin, sddata.analogMax, sddata.literMin, sddata.literMax, sddata.limitLow, sddata.limitHigh, ccFactor);
+        dtostrf(sddata.scale,8,3, cscale);
+        sprintf((char *)&sdbuf[0], sdini_format, sddata.id, sddata.analogMin, sddata.analogMax, sddata.literMin, sddata.literMax, sddata.limitLow, sddata.limitHigh, cscale);
         Serial.println((char *)&sdbuf[0]);
         SD.remove(SETTINGSFILE);
         Serial.print("writing Settings to SD Card...");
@@ -1038,6 +1037,8 @@ void setup() {
 
     analogReadCorrection(8, 2058);
 
+    Scale = sct013.Scale();
+    
     Serial.println("Setup Done!");
 }
 
